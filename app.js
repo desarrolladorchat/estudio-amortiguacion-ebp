@@ -2927,7 +2927,56 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     addFieldHelpers();
-    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="Nuevos estudios ZTT / SAPREM - julio 2026"><option value="batch2-tar-acar700-bare">Tarapaca ACAR 700 duplex - sin FR-3</option><option value="batch2-tar-acar700-damped">Tarapaca ACAR 700 duplex - FJZ + FR-3</option><option value="batch2-ea24-acar1000-335">EA24 ACAR 1000 cuadruple - 335 m</option><option value="batch2-ea24-acar1000-406">EA24 ACAR 1000 cuadruple - 406 m</option><option value="batch2-ea24-opgw-bare">EA24 OPGW 13,6 - sin AMG</option><option value="batch2-ea24-opgw-350">EA24 OPGW 13,6 - 350 m</option><option value="batch2-ea24-opgw-406">EA24 OPGW 13,6 - 406 m</option><option value="batch2-ztt-opgw128-17">ZTT OPGW 12,1 / 4D-20 - tabla EDS 17%</option><option value="batch2-ztt-acar900-19">ZTT ACAR 900 / FR-3 - tabla EDS 19%</option><option value="batch2-ztt-acar900-24">ZTT ACAR 900 / FR-3 - tabla EDS 24%</option><option value="batch2-ztt-opgw118-bare">ZTT OPGW 11,80 - sin 4D-20</option><option value="batch2-ztt-opgw118-250">ZTT OPGW 11,80 - 250 m / 2 x 4D-20</option><option value="batch2-ztt-opgw118-500">ZTT OPGW 11,80 - 500 m / 4 x 4D-20</option><option value="batch2-ztt-opgw118-800">ZTT OPGW 11,80 - 800 m / 6 x 4D-20</option><option value="batch2-ztt-opgw118-1000">ZTT OPGW 11,80 - 1000 m / 8 x 4D-20</option><option value="batch2-ztt-greeley-bare">ZTT AAAC Greeley - sin FRY-3/5</option><option value="batch2-ztt-greeley-450">ZTT AAAC Greeley - 450 m / 2 x FRY-3/5</option><option value="batch2-ztt-greeley-900">ZTT AAAC Greeley - 900 m / 4 x FRY-3/5</option><option value="batch2-ztt-greeley-1200">ZTT AAAC Greeley - 1200 m / 6 x FRY-3/5</option><option value="batch2-ztt-fjz400">FJZ-245/28D - vano 400 m / 8 subvanos</option><option value="batch2-ea26-arbutus-bare">EA26 AAC ARBUTUS duplex - sin AMG</option><option value="batch2-ea26-arbutus-250">EA26 AAC ARBUTUS duplex - 250 m</option><option value="batch2-ea26-arbutus-423">EA26 AAC ARBUTUS duplex - 423 m</option><option value="batch2-ea26-opgw-bare">EA26 OPGW 14,05 - sin AMG051126</option><option value="batch2-ea26-opgw-423">EA26 OPGW 14,05 - 423 m</option><option value="batch2-tar-opgw-bare">Tarapaca OPGW 13,41 - sin 4D-20</option><option value="batch2-tar-opgw-250">Tarapaca OPGW 13,41 - 250 m / 2 x 4D-20</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", `
+      <optgroup label="Arrangement of Spacer for conductor - ACAR 700 MCM dúplex">
+        <option value="batch2-tar-acar700-bare">Tarapacá ACAR 700 dúplex - sin FR-3</option>
+        <option value="batch2-tar-acar700-damped">Tarapacá ACAR 700 dúplex - FJZ + FR-3</option>
+      </optgroup>
+      <optgroup label="EA24-conductor-022813 - ACAR 1000 MCM cuádruple">
+        <option value="batch2-ea24-acar1000-335">ACAR 1000 cuádruple - vano 335 m</option>
+        <option value="batch2-ea24-acar1000-406">ACAR 1000 cuádruple - vano 406 m</option>
+      </optgroup>
+      <optgroup label="EA24-opgw-022814 - OPGW 13,6 mm">
+        <option value="batch2-ea24-opgw-bare">OPGW 13,6 - sin AMG</option>
+        <option value="batch2-ea24-opgw-350">OPGW 13,6 - vano 350 m</option>
+        <option value="batch2-ea24-opgw-406">OPGW 13,6 - vano 406 m</option>
+      </optgroup>
+      <optgroup label="Vibration Study for OPGW 12.8 mm - 4D-20 Rev.2">
+        <option value="batch2-ztt-opgw128-17">OPGW 12,1 / 4D-20 - tabla EDS 17 %</option>
+      </optgroup>
+      <optgroup label="Vibration Study for ACAR 900 MCM - FR-3 Rev.2">
+        <option value="batch2-ztt-acar900-19">ACAR 900 / FR-3 - tabla EDS 19 %</option>
+        <option value="batch2-ztt-acar900-24">ACAR 900 / FR-3 - tabla EDS 24 %</option>
+      </optgroup>
+      <optgroup label="Vibration Study for OPGW 11,80 mm">
+        <option value="batch2-ztt-opgw118-bare">OPGW 11,80 - sin 4D-20</option>
+        <option value="batch2-ztt-opgw118-250">OPGW 11,80 - 250 m / 2 × 4D-20</option>
+        <option value="batch2-ztt-opgw118-500">OPGW 11,80 - 500 m / 4 × 4D-20</option>
+        <option value="batch2-ztt-opgw118-800">OPGW 11,80 - 800 m / 6 × 4D-20</option>
+        <option value="batch2-ztt-opgw118-1000">OPGW 11,80 - 1000 m / 8 × 4D-20</option>
+      </optgroup>
+      <optgroup label="Vibration Study for AAAC Greeley - FRY-3/5">
+        <option value="batch2-ztt-greeley-bare">AAAC Greeley - sin FRY-3/5</option>
+        <option value="batch2-ztt-greeley-450">AAAC Greeley - 450 m / 2 × FRY-3/5</option>
+        <option value="batch2-ztt-greeley-900">AAAC Greeley - 900 m / 4 × FRY-3/5</option>
+        <option value="batch2-ztt-greeley-1200">AAAC Greeley - 1200 m / 6 × FRY-3/5</option>
+      </optgroup>
+      <optgroup label="Spacer Damper FJZ-245-28D - AAAC Greeley">
+        <option value="batch2-ztt-fjz400">FJZ-245/28D - vano 400 m / 8 subvanos</option>
+      </optgroup>
+      <optgroup label="EA26-010911 - AAC ARBUTUS dúplex">
+        <option value="batch2-ea26-arbutus-bare">AAC ARBUTUS dúplex - sin AMG</option>
+        <option value="batch2-ea26-arbutus-250">AAC ARBUTUS dúplex - vano 250 m</option>
+        <option value="batch2-ea26-arbutus-423">AAC ARBUTUS dúplex - vano 423 m</option>
+      </optgroup>
+      <optgroup label="EA26-010912 - OPGW 14,05 mm">
+        <option value="batch2-ea26-opgw-bare">OPGW 14,05 - sin AMG-051126</option>
+        <option value="batch2-ea26-opgw-423">OPGW 14,05 - vano 423 m / AMG-051126</option>
+      </optgroup>
+      <optgroup label="Arrangement of Spacer for OPGW - OPGW 13,41 mm">
+        <option value="batch2-tar-opgw-bare">Tarapacá OPGW 13,41 - sin 4D-20</option>
+        <option value="batch2-tar-opgw-250">Tarapacá OPGW 13,41 - 250 m / 2 × 4D-20</option>
+      </optgroup>`);
     $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="PLP TR-739-E / TR-743-E · ensayos SVD"><option value="tr739-underdamped">TR-739-E · 1 SVD · 15 millones de ciclos</option><option value="tr739-adequate">TR-739-E · 3 SVD · 22 millones de ciclos</option><option value="tr743-power">TR-743-E · SVD 5050105 · potencia 16-106 Hz</option></optgroup>');
     $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="TR 792 · LT Entre Ríos-Charrúa · AAC JESSAMINE dúplex"><option value="tr792-265-bare">265 m · vibración eólica · sin Stockbridge</option><option value="tr792-265-damped">265 m · vibración eólica · con 9305.07/G/1</option><option value="tr792-431-bare">431 m · vibración eólica · sin Stockbridge</option><option value="tr792-431-damped">431 m · vibración eólica · con 9305.07/G/1</option><option value="tr792-265-subspan">265 m · oscilación de subvano</option><option value="tr792-431-subspan">431 m · oscilación de subvano</option></optgroup>');
     $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="CL28-1268 / 025-20 - OPGW 12,2 / SD-0302-D27"><option value="farellon-opgw-bare">OPGW 12,2 · sin amortiguadores</option><option value="farellon-opgw-short">OPGW 12,2 · vano 250 m · 1 SD</option><option value="farellon-opgw-long">OPGW 12,2 · vano 377 m · 2 SD</option></optgroup>');
