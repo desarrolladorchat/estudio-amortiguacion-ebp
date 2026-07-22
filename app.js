@@ -662,9 +662,9 @@
     const index = Number.parseInt($("catalog").value, 10);
     if (!Number.isInteger(index) || !catalog[index]) return;
     dampers.push({ catalog: catalog[index], position: Math.max(0, number("pos") || 0), coef: Math.max(0, number("dcoef") || 0) });
-    manualConfigurationChanged = true;
+    invalidateResultsAfterAccessoryChange();
     renderDampers();
-    setStatus(`${catalog[index].reference} añadido al estudio.`, "ok");
+    setStatus(`${catalog[index].reference} añadido al estudio. Los resultados anteriores fueron retirados; pulse Calcular estudio.`, "");
   }
 
   function setValue(id, value) {
@@ -1651,10 +1651,10 @@
     const beaconGroup = beaconCards ? `<details style="margin:8px 0;border:1px solid #bdd6df;border-radius:8px;background:#f7fbfc"><summary style="cursor:pointer;padding:10px;font-weight:700;color:#087f8c">19 amortiguadores junto a balizas · mostrar posiciones editables</summary><div style="padding:0 8px 8px">${beaconCards}</div></details>` : "";
     $("dampers").innerHTML = regular + allocationGroup + beaconGroup;
     document.querySelectorAll("[data-i]").forEach((input) => {
-      input.addEventListener("input", () => { dampers[Number(input.dataset.i)][input.dataset.k] = Math.max(0, Number.parseFloat(input.value) || 0); manualConfigurationChanged = true; drawActualInstallationDiagram(); });
+      input.addEventListener("input", () => { dampers[Number(input.dataset.i)][input.dataset.k] = Math.max(0, Number.parseFloat(input.value) || 0); invalidateResultsAfterAccessoryChange(); drawActualInstallationDiagram(); });
     });
     document.querySelectorAll("[data-remove]").forEach((button) => {
-      button.addEventListener("click", () => { dampers.splice(Number(button.dataset.remove), 1); manualConfigurationChanged = true; renderDampers(); });
+      button.addEventListener("click", () => { dampers.splice(Number(button.dataset.remove), 1); invalidateResultsAfterAccessoryChange(); renderDampers(); });
     });
     if(manualConfigurationChanged)drawActualInstallationDiagram();
   }
@@ -1695,6 +1695,12 @@
     const canvas = $("chart");
     canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
     $("chartLegend").textContent = "";
+  }
+
+  function invalidateResultsAfterAccessoryChange() {
+    manualConfigurationChanged = true;
+    clearResultsOnly();
+    setStatus("Configuración de accesorios modificada. La gráfica anterior fue eliminada porque ya no representa el estudio actual. Pulse Calcular estudio para obtener el caso disponible.", "");
   }
 
   function solveAmplitude(residual, diameter) {
@@ -2161,7 +2167,9 @@
       if (!currentReference && $("analysisMode").value === "reference") throw new Error("Seleccione y cargue un ejemplo PDF, o cambie el marco de cálculo.");
 
       if(currentReference?.mode==="batch2"){
-        const rows=batch2Rows(L,D,strouhal);lastRows=rows;renderBatch2Results(rows,limit,L);return;
+        const resolution=resolveBatch2DataForAccessories(L);
+        if(!resolution.valid)throw new Error(resolution.message);
+        const rows=batch2Rows(L,D,strouhal,resolution.data);lastRows=rows;renderBatch2Results(rows,limit,L,resolution.data,resolution.changed);return;
       }
       if(currentReference?.mode==="tr792"){
         const rows=tr792Rows(fMin,fMax,step,D,strouhal);lastRows=rows;renderTr792Results(rows,limit);return;
@@ -2306,8 +2314,19 @@
     return data.schedule.at(-1)[1];
   }
 
-  function batch2Rows(span,diameter,strouhal){
-    const data=currentReference.data;
+  function resolveBatch2DataForAccessories(span){
+    const selected=currentReference.data;
+    if(!manualConfigurationChanged)return {valid:true,data:selected,changed:false};
+    if(selected.kind!=="curve")return {valid:false,message:"La configuración fue modificada, pero este PDF no publica una curva alternativa para esa combinación. Use EBP CIGRE independiente o vuelva a cargar el ejemplo documental."};
+    const installed=dampers.filter((item)=>item.catalog.reference===selected.model).length;
+    if(installed===selected.quantity)return {valid:false,message:"Se modificaron posiciones o coeficientes. La reproducción PDF conserva cotas y curvas fijas; use EBP CIGRE independiente para recalcular una instalación diferente o vuelva a cargar el ejemplo."};
+    const candidates=Object.values(BATCH2_CASES).filter((data)=>data!==selected&&data.kind==="curve"&&data.source===selected.source&&data.model===selected.model&&Math.abs(data.diameter-selected.diameter)<.001&&data.quantity===installed);
+    if(!candidates.length)return {valid:false,message:`El PDF no contiene una curva para ${installed} ${selected.model}. La gráfica anterior fue eliminada; seleccione EBP CIGRE independiente para una configuración no documentada.`};
+    const data=[...candidates].sort((a,b)=>Math.abs(a.span-span)-Math.abs(b.span-span))[0];
+    return {valid:true,data,changed:true};
+  }
+
+  function batch2Rows(span,diameter,strouhal,data=currentReference.data){
     if(data.kind==="schedule")return data.schedule.slice(1).map(([maximum,quantity],index)=>({f:maximum,strain:quantity,damperStrain:0,damperAmplitude:0,amplitudeMm:quantity,batch2:true,batchSchedule:true,minimum:index?data.schedule[index][0]:0}));
     if(data.kind==="subspan")return data.subspans.map((length,index)=>({f:index+1,strain:length,damperStrain:54.5,damperAmplitude:0,amplitudeMm:length,batch2:true,batchSubspan:true,subspan:index+1}));
     const rows=[],frequencies=new Set([data.fmin,data.fmax,...data.strain.map(point=>point[0]),...(data.accessory||[]).map(point=>point[0]),...(data.motion||[]).map(point=>point[0])]);
@@ -2319,8 +2338,7 @@
     return rows;
   }
 
-  function renderBatch2Results(rows,limit,span){
-    const data=currentReference.data;
+  function renderBatch2Results(rows,limit,span,data=currentReference.data,configurationChanged=false){
     if(data.kind==="schedule"){
       const quantity=batch2ScheduleQuantity(data,span);
       $("maxAmp").textContent=String(quantity);$("maxStrain").textContent=data.first.toFixed(2);$("maxWind").textContent=data.spacing.toFixed(2);$("fails").textContent="N/A";
@@ -2342,7 +2360,8 @@
     $("maxAmpLabel").textContent="Movimiento maximo accesorio (mm)";$("maxStrainLabel").textContent="Deformacion maxima (microstrain)";$("maxWindLabel").textContent="Deformacion maxima en accesorio";
     $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>deformacion extremo</th><th>deformacion accesorio</th><th>movimiento (mm)</th></tr>";
     $("results").innerHTML=rows.map(row=>`<tr><td>${row.f.toFixed(1)}</td><td>${row.velocity.toFixed(2)}</td><td>${row.reynolds.toFixed(0)}</td><td>${row.strain.toFixed(1)}</td><td>${row.damperStrain.toFixed(1)}</td><td>${row.damperAmplitude.toFixed(3)}</td></tr>`).join("");
-    setStatus(`Verificacion ${data.source}: maximo ${maxEnd.toFixed(1)} microstrain en extremo, ${maxAccessory.toFixed(1)} en accesorio y ${maxMotion.toFixed(3)} mm. La forma, escala y pauta coinciden con la figura digitalizada; ${failures?`${failures} puntos exceden`:`ningun punto excede`} ${limit} microstrain.`,"ok");drawChart(rows);
+    const switched=configurationChanged?` Se utilizó el caso documental emparejado: ${data.label}.`:"";
+    setStatus(`Verificacion ${data.source}: maximo ${maxEnd.toFixed(1)} microstrain en extremo, ${maxAccessory.toFixed(1)} en accesorio y ${maxMotion.toFixed(3)} mm. La forma, escala y pauta coinciden con la figura digitalizada; ${failures?`${failures} puntos exceden`:`ningun punto excede`} ${limit} microstrain.${switched}`,"ok");drawChart(rows);
   }
 
   function renderPlpSvdTestResults(rows) {
