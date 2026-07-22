@@ -2793,7 +2793,9 @@
     });
     $("add").addEventListener("click", addDamper);
     $("clear").addEventListener("click", clearStudy);
+    $("clearTop").addEventListener("click", clearStudy);
     $("calc").addEventListener("click", calculateStudy);
+    $("calcTop").addEventListener("click", calculateStudy);
     $("download").addEventListener("click", downloadCsv);
     $("loadPreset").addEventListener("click", loadPreset);
     syncSliderFromInput();
