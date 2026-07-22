@@ -388,6 +388,7 @@
   let lastRows = [];
   let currentReference = null;
   let diagramZoom = 1;
+  let catalogImageZoom = 1;
   let manualConfigurationChanged = false;
   let lchcEs007Allocation = {};
 
@@ -632,12 +633,14 @@
       const familyItems = catalog.filter((x) => !family || x.family === family);
       const closest = [...familyItems].sort((a, b) => diameterGap(a, diameter) - diameterGap(b, diameter))[0];
       $("catalogImage").src = familyImage;
+      $("catalogImage").alt = `Imagen de la familia ${family || "seleccionada"}`;
       $("catalogToggleImage").src = familyImage;
       $("catalogToggleText").textContent = "Sin modelos compatibles";
       $("catalogInfo").innerHTML = closest ? `<strong>${family || "Familia seleccionada"}</strong><br>El conductor es Ø ${diameter.toFixed(2)} mm. El modelo más cercano es ${closest.reference}, válido para Ø ${closest.diameter_min_mm}-${closest.diameter_max_mm} mm; faltan ${diameterGap(closest, diameter).toFixed(2)} mm para entrar en su rango.` : "No hay accesorios cargados para la familia elegida.";
       return;
     }
     $("catalogImage").src = imageByFamily[item.family] || "assets/amortiguador-sd.png";
+    $("catalogImage").alt = `Ficha técnica del accesorio ${item.reference}`;
     $("catalogToggleImage").src = imageByFamily[item.family] || "assets/amortiguador-sd.png";
     $("catalogToggleText").textContent = `${item.reference} — ${massText(item)}`;
     const details = [];
@@ -1560,6 +1563,32 @@
   function changeDiagramZoom(delta) {
     diagramZoom = Math.min(4, Math.max(0.5, delta === 0 ? 1 : diagramZoom + delta));
     refreshDiagramZoom();
+  }
+
+  function refreshCatalogImageZoom() {
+    const image = $("catalogImageZoom");
+    const naturalWidth = image.naturalWidth || 1200;
+    image.style.width = `${naturalWidth * catalogImageZoom}px`;
+    $("catalogZoomLevel").textContent = `${Math.round(catalogImageZoom * 100)}%`;
+  }
+
+  function openCatalogImageZoom() {
+    const source = $("catalogImage");
+    const image = $("catalogImageZoom");
+    const index = Number.parseInt($("catalog").value, 10);
+    const item = Number.isInteger(index) ? catalog[index] : null;
+    catalogImageZoom = 1;
+    image.src = source.currentSrc || source.src;
+    image.alt = source.alt || "Ficha técnica ampliada del accesorio seleccionado";
+    $("catalogImageTitle").textContent = item ? `Ficha técnica · ${item.reference}` : "Ficha técnica del accesorio";
+    $("catalogImageDialog").showModal();
+    if (image.complete) refreshCatalogImageZoom();
+    else image.addEventListener("load", refreshCatalogImageZoom, { once: true });
+  }
+
+  function changeCatalogImageZoom(delta) {
+    catalogImageZoom = Math.min(5, Math.max(0.25, delta === 0 ? 1 : catalogImageZoom + delta));
+    refreshCatalogImageZoom();
   }
 
   function applyRecommendation() {
@@ -2933,6 +2962,11 @@
     $("zoomOut").addEventListener("click", () => changeDiagramZoom(-0.25));
     $("zoomReset").addEventListener("click", () => changeDiagramZoom(0));
     $("closeDiagram").addEventListener("click", () => $("diagramDialog").close());
+    $("openCatalogZoom").addEventListener("click", openCatalogImageZoom);
+    $("catalogZoomIn").addEventListener("click", () => changeCatalogImageZoom(0.25));
+    $("catalogZoomOut").addEventListener("click", () => changeCatalogImageZoom(-0.25));
+    $("catalogZoomReset").addEventListener("click", () => changeCatalogImageZoom(0));
+    $("closeCatalogZoom").addEventListener("click", () => $("catalogImageDialog").close());
     $("applyRecommendation").addEventListener("click", applyRecommendation);
     $("catalog").addEventListener("change", updateCatalogPreview);
     $("catalogToggle").addEventListener("click", () => {
