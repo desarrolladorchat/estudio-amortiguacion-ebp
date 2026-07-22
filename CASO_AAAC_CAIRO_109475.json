@@ -1,0 +1,35 @@
+{
+  "project": "Guardiamarina 110 kV",
+  "reference": "109475",
+  "conductor": {
+    "type": "AAAC Cairo",
+    "diameter_mm": 19.88,
+    "cross_section_mm2": 235.8,
+    "mass_kg_m": 0.6502,
+    "rts_kN": 70.76,
+    "eds_kN": 14.15,
+    "bending_stiffness_Nm2": 190.73,
+    "self_damping_parameter": 199642.68,
+    "wavelength_exponent": 4.35,
+    "amplitude_exponent": 2.35
+  },
+  "calculation": {
+    "frequency_min_Hz": 9,
+    "frequency_max_Hz": 70,
+    "turbulence_percent": 2,
+    "wind_file": "SINGLE",
+    "wind_function": "Variable-2",
+    "strain_limit_microstrain_0_peak": 150,
+    "damper_safety_factor": 1.5
+  },
+  "damper": {
+    "manufacturer": "ZTT",
+    "model": "FR-2",
+    "dynamic_curve_available": false
+  },
+  "reference_cases": [
+    {"name": "undamped", "maximum_clamp_microstrain": 448},
+    {"name": "span_300m_2_dampers", "span_m": 300, "positions_from_left_m": [1.3, 298.7], "maximum_clamp_microstrain": 90, "maximum_damper_clamp_microstrain": 35},
+    {"name": "span_550m_4_dampers", "span_m": 550, "positions_from_left_m": [1.3, 2.5, 547.5, 548.7], "maximum_clamp_microstrain_report_summary": 90, "maximum_damper_clamp_microstrain_report_summary": 35}
+  ]
+}

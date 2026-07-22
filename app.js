@@ -1,0 +1,2802 @@
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  // IEC 61897:1998, Annex C. x = log10(Ypp/D), fnc = 10^sum(a_n*x^n).
+  // The linear coefficient is negative; this reproduces the Annex C curve
+  // (fnc(0.01)=0.00603 and fnc(0.10)=0.37087).
+  const IEC = [-0.491949, -11.8029, -43.5532, -78.5876, -86.1199, -58.1808, -23.6082, -5.26705, -0.495885];
+  const imageByFamily = {
+    separador_SP2: "assets/separador-sp2.png",
+    separador_SP3: "assets/separador-sp3.png",
+    separador_SP3_3: "assets/separador-sp3-3.png",
+    SPA400DA: "assets/spa400da-rev6.png", SPA450DA: "assets/spa-da.png",
+    SPA400TA: "assets/spa-ta.png", SPA450TA: "assets/spa-ta.png",
+    SPA400CA: "assets/spa-ca.png", SPA450CA: "assets/spa-ca.png",
+    amortiguador_SD: "assets/amortiguador-sd.png",
+    amortiguador_4D: "assets/amortiguador-4d20-ztt.png",
+    amortiguador_FR: "assets/amortiguador-fr2-ztt-product.png",
+    amortiguador_SAPREM_AMG: "assets/amortiguador-saprem-amg.png",
+    amortiguador_FR3: "assets/amortiguador-fr3-ztt.png",
+    amortiguador_PLP_VORTX: "assets/amortiguador-plp-vortx-product.jpg",
+    amortiguador_SALVI_4M: "assets/amortiguador-salvi-4m-installation.png",
+    separador_amortiguador_SALVI: "assets/spa-ca.png",
+    separador_DAMP_S2400: "assets/damp-s2400-55-ccr.png",
+    amortiguador_MOSDORFER_9305: "assets/mosdorfer-9305-07-g1.png",
+    amortiguador_PLP_SVD: "assets/plp-svd-laboratory.png"
+  };
+  const TR792_CASES = {
+    265: {
+      tension: 25.7, dampingK: 0.00372, damperMotion: 0.67,
+      subspans: [25, 41, 46, 40, 46, 42, 25], spacerCount: 5,
+      single: [[5,167],[6,136],[7,98],[8,72],[9,55],[10,42],[11,31],[12,25],[13,21],[14,18],[15,15],[16,14],[17,12],[18,11],[19,10],[20,9],[21,6],[22,5],[23,4],[24,3]],
+      suspension: [[5.5,83],[6.5,65],[7.5,53],[8.5,39],[9.5,30],[10.5,23],[11.5,22],[12.5,18],[13.5,15],[14.5,12],[15.5,10],[16.5,8],[17.5,7],[18.5,5],[19.5,4],[20.5,2],[21.5,0]],
+      spacer: [[5.5,26],[6.5,24],[7.5,20],[8.5,16],[9.5,14],[10.5,12],[11.5,11],[12.5,10.5],[13.5,10],[14.5,9],[15.5,8],[16.5,7],[17.5,6],[18.5,4],[19.5,4],[20.5,2],[21.5,0]],
+      dampedSuspension: [[5.5,8],[6.5,5],[7.5,0],[24,0]],
+      dampedSpacer: [[5.5,3],[6.5,2],[7.5,0],[24,0]],
+      damperClamp: [[5.5,2],[6.5,1],[7.5,0],[24,0]]
+    },
+    431: {
+      tension: 24.507, dampingK: 0.00410, damperMotion: 1.52,
+      subspans: [25, 41, 46, 40, 45, 39, 45, 39, 47, 40, 24], spacerCount: 10,
+      single: [[5,158],[6,120],[7,85],[8,63],[9,47],[10,35],[11,28],[12,22],[13,18],[14,16],[15,14],[16,12],[17,11],[18,10],[19,9],[20,6],[21,5],[22,4],[23,3],[24,0]],
+      suspension: [[5.5,80],[6.5,59],[7.5,46],[8.5,31],[9.5,27],[10.5,24],[11.5,17],[12.5,17],[13.5,14],[14.5,13],[15.5,10],[16.5,8],[17.5,6],[18.5,4],[19.5,0]],
+      spacer: [[5.5,26],[6.5,25],[7.5,19],[8.5,17],[9.5,13],[10.5,12],[11.5,11],[12.5,11],[13.5,10],[14.5,8],[15.5,7],[16.5,5],[17.5,3],[19.5,0]],
+      dampedSuspension: [[5.5,18],[6.5,10],[7.5,2],[8.5,0],[15.5,0],[16.5,3],[18,1],[24,0]],
+      dampedSpacer: [[5.5,9],[6.5,5],[7.5,1],[8.5,0],[15.5,0],[16.5,5],[18,3],[21,4],[24,0]],
+      damperClamp: [[5.5,6],[6.5,4],[7.5,1],[8.5,0],[15.5,0],[16.5,3],[18,1],[21,2],[24,0]]
+    }
+  };
+  const TR743_POWER_CURVE = [
+    [16,.10,.08],[20,.18,.10],[23,.32,.13],[27,.35,.16],[30,.43,.18],[33,.50,.19],[36,.47,.20],[38,.45,.21],[41,.43,.22],[44,.50,.25],[47,.52,.30],[50,.48,.30],[54,.69,.34],[57,.70,.37],[60,.87,.41],[64,.80,.41],[67,1.00,.41],[71,1.10,.43],[74,1.13,.47],[78,1.25,.50],[81,1.28,.49],[85,1.24,.55],[88,1.29,.55],[92,1.38,.56],[96,1.58,.65],[100,1.61,.66],[102,1.86,.78],[106,1.88,.76]
+  ];
+  const TR739_OPTICAL = {
+    underdamped: [[0,0],[.4,0],[1.1,.01],[3.8,0],[5.1,0],[7.8,0],[9.2,.01],[15,.02]],
+    adequate: [[0,.02],[.7,.02],[3.6,.02],[4.9,.02],[7.4,.02],[8.8,.03],[11.5,.01],[11.5,.02],[11.5,.02],[14.2,.02],[14.2,.02],[14.2,.02],[15.5,.02],[18.1,.01],[19.6,.02],[22,.01]]
+  };
+  const LCHC007_CASES={
+    low:{label:"Zona baja",tension:18.966,H:.000166,undamped:279,damped:64,fmax:65,maxMotion:7},
+    high:{label:"Zona alta sin hielo",tension:18.005,H:.000166,undamped:274,damped:61,fmax:65,maxMotion:8},
+    ice:{label:"Zona alta con hielo",tension:22.261,H:.00145,undamped:264,damped:92,fmax:35,maxMotion:7,mass:1.44}
+  };
+  const LAB_CURVES = {
+    undamped_tension: { end: [[7,300],[9,312],[11,318],[13,320],[15,304],[17,252],[19,205],[21,166],[23,145],[25,126],[27,113],[30,88],[34,64],[38,47],[43,32],[48,22],[53,17],[55,0]], damper: [], motion: [] },
+    undamped_suspension: { end: [[7,200],[9,207],[11,210],[13,210],[15,198],[17,171],[19,150],[21,122],[23,102],[26,86],[30,69],[35,51],[40,35],[45,23],[50,14],[54,0]], damper: [], motion: [] },
+    damped_tension: {
+      end: [[7,30],[9,18],[11,12],[14,10],[17,12],[20,17],[23,22],[26,16],[29,11],[33,8],[36,0]],
+      damper: [[7,20],[9,12],[12,8],[16,7],[20,10],[23,13],[27,9],[31,6],[36,0]],
+      motion: [[7,.50],[9,.30],[12,.16],[16,.15],[20,.22],[23,.27],[26,.17],[30,.09],[36,0]]
+    },
+    damped_suspension: {
+      end: [[7,25],[9,17],[12,13],[16,14],[20,19],[23,23],[27,16],[31,11],[36,0]],
+      damper: [[7,18],[9,12],[13,9],[17,10],[21,13],[24,15],[28,10],[32,7],[36,0]],
+      motion: [[7,.56],[9,.34],[12,.19],[16,.16],[20,.23],[23,.28],[26,.20],[30,.11],[36,0]]
+    }
+  };
+  const EC0016_CURVE = [[20,1.0],[30,.7],[40,.4],[50,.25],[60,.15],[70,.1],[78,0],[82,1.8],[86,2.7],[90,3.0],[100,2.7],[110,2.2],[120,1.6],[125,0]];
+  const CHARRUA_CASES = {
+    cochin: {
+      code:"EA11-060611_v1",label:"ACSR/CAA COCHIN",diameter:16.86,mass:.7852,tension:14,ei:121.95,H:136321.76,fmin:11,fmax:55,limit:150,damperLimit:75,model:"AMG-050920",threshold1:350,threshold2:700,suspFirst:1.02,tensionFirst:1,spacing:.55,preformed:false,beacons:false,
+      undampedTension:[[11,350],[13,375],[15,365],[17,300],[19,225],[22,170],[26,145],[30,110],[35,75],[40,52],[45,35],[50,22],[54,0]],
+      undampedSuspension:[[11,240],[13,260],[15,252],[17,210],[19,175],[22,145],[26,110],[32,75],[38,50],[45,30],[52,15],[54,0]],
+      dampedMax:{short:45,medium:45,long:32},damperMax:{short:25,medium:22,long:18},motionMax:{short:.82,medium:.82,long:.48}
+    },
+    ehs: {
+      code:"EA11-060612_v1",label:'EHS 3/8"',diameter:9.52,mass:.406,tension:7,ei:48.19,H:22695.29,fmin:20,fmax:80,limit:225,damperLimit:112,model:"AMG-030513",threshold1:450,threshold2:900,suspFirst:.865,tensionFirst:1,spacing:.45,preformed:false,beacons:true,
+      undampedTension:[[20,360],[22,330],[24,310],[26,255],[28,225],[31,180],[35,140],[40,105],[45,84],[50,78],[55,60],[60,42],[68,28],[76,20],[79,0]],
+      dampedMax:{short:25,medium:22,long:16},damperMax:{short:18,medium:16,long:14},motionMax:{short:.12,medium:.11,long:.10}
+    },
+    opgw128: {
+      code:"EA11-102811_v2",label:"OPGW 12,8 mm",diameter:12.8,mass:.455,tension:8.02,ei:141.02,H:10420.24,fmin:15,fmax:125,limit:150,damperLimit:75,model:"AMG-050926",threshold1:275,threshold2:600,suspFirst:.52,tensionFirst:.08,spacing:.45,preformed:true,beacons:true,
+      undampedTension:[[15,210],[20,300],[25,430],[30,525],[33,550],[38,530],[45,445],[52,340],[60,245],[70,175],[80,135],[95,112],[110,105],[125,90]],
+      dampedMax:{short:78,medium:72,long:70},damperMax:{short:52,medium:48,long:50},motionMax:{short:.34,medium:.45,long:.52}
+    },
+    opgw1725: {
+      code:"EA11-102812_v1",label:"OPGW 17,25 mm",diameter:17.25,mass:.965,tension:17.56,ei:518.59,H:43713.88,fmin:11,fmax:115,limit:150,damperLimit:75,model:"AMG-091529",threshold1:300,threshold2:600,suspFirst:.74,tensionFirst:.08,spacing:.65,preformed:true,beacons:true,
+      undampedTension:[[11,225],[15,330],[19,455],[23,515],[27,500],[32,430],[38,335],[45,245],[52,180],[62,125],[75,88],[90,58],[105,30],[112,28],[115,0]],
+      dampedMax:{short:55,medium:55,long:55},damperMax:{short:28,medium:30,long:30},motionMax:{short:.60,medium:.55,long:.55}
+    }
+  };
+  const FARELLON_CASES = {
+    greeley: {
+      code:"023-20",label:"AAAC Greeley",diameter:28.14,mass:1.295,tension:21.1,ei:776.86,H:.000449,fmin:7,fmax:49,model:"SD-0403-D34",threshold:250,maxSpan:378,first:1.40,undampedMax:314,
+      undamped:[[7,218],[8,246],[9,270],[10,291],[11,305],[12,313],[13,314],[14,309],[15,298],[16,284],[17,258],[18,235],[19,210],[20,193],[21,180],[22,170],[23,150],[24,140],[25,130],[27,114],[30,94],[33,78],[36,63],[40,46],[44,31],[48,18],[49,0]],
+      damped:{short:{endMax:53,damperMax:33,motionMax:.78,end:[[7,18],[10,9],[13,0],[23,0],[25,20],[27,40],[29,52],[30,53],[32,50],[35,42],[40,28],[45,20],[48,15],[49,0]],damper:[[7,6],[12,0],[24,0],[26,14],[28,27],[30,33],[33,29],[36,23],[40,17],[45,12],[48,8],[49,0]]},long:{endMax:29,damperMax:26,motionMax:.57,end:[[7,7],[10,2],[13,0],[24,0],[26,12],[28,24],[29,29],[31,27],[35,23],[40,17],[45,14],[48,10],[49,0]],damper:[[7,2],[12,0],[24,0],[26,8],[28,20],[30,26],[33,23],[36,19],[40,15],[45,11],[48,7],[49,0]]}}
+    },
+    flint: {
+      code:"024-20",label:"AAAC Flint",diameter:25.16,mass:1.035,tension:23.4,ei:494.10,H:.000149,fmin:8,fmax:73,model:"SD-0403-D27",threshold:225,maxSpan:377,first:1.30,undampedMax:400,
+      undamped:[[8,210],[10,260],[12,310],[14,350],[16,382],[18,398],[19,400],[20,396],[22,378],[24,348],[26,310],[28,275],[30,250],[32,220],[34,195],[36,170],[38,150],[40,135],[43,112],[46,94],[50,72],[55,52],[60,38],[65,28],[68,20],[70,17],[73,0]],
+      damped:{short:{endMax:78,damperMax:50,motionMax:.93,end:[[8,15],[12,6],[16,0],[25,0],[28,44],[30,63],[33,78],[36,72],[40,63],[45,65],[50,53],[55,42],[60,32],[65,25],[70,18],[73,0]],damper:[[8,7],[16,0],[25,0],[28,24],[31,44],[34,50],[37,43],[42,38],[47,35],[52,27],[58,18],[65,7],[70,0],[73,0]]},long:{endMax:36,damperMax:41,motionMax:.70,end:[[8,8],[15,0],[25,0],[28,20],[31,32],[34,36],[38,31],[42,34],[46,35],[50,31],[55,28],[60,25],[65,21],[70,15],[73,0]],damper:[[8,4],[16,0],[25,0],[28,18],[31,35],[34,41],[38,34],[43,31],[47,33],[52,25],[58,15],[65,5],[70,0],[73,0]]}}
+    },
+    opgw: {
+      code:"025-20",label:"OPGW 24G652 Ø12,2",diameter:12.2,mass:.407,tension:8.35,ei:71.92,H:.0000102,fmin:15,fmax:128,model:"SD-0302-D27",minSpan:90,threshold:250,maxSpan:377,first:.65,undampedMax:418,peakF:33,
+      undamped:[[15,220],[18,260],[20,300],[23,345],[26,380],[30,410],[33,418],[36,410],[40,370],[45,300],[50,240],[55,200],[60,165],[70,120],[80,86],[90,65],[100,50],[110,40],[120,30],[125,20],[128,0]],
+      damped:{short:{endMax:83,damperMax:29,motionMax:.32,end:[[15,0],[30,0],[32,22],[36,44],[40,35],[45,28],[50,62],[55,83],[60,76],[70,50],[80,35],[90,45],[100,42],[110,35],[120,25],[125,15],[128,0]],damper:[[15,0],[30,0],[33,12],[38,20],[45,13],[50,22],[54,29],[60,25],[70,17],[80,12],[90,18],[100,17],[110,13],[120,8],[128,0]]},long:{endMax:34,damperMax:22,motionMax:.22,end:[[15,0],[30,0],[33,8],[38,5],[45,8],[50,22],[55,29],[60,24],[70,17],[80,15],[90,30],[97,34],[105,33],[115,28],[125,18],[128,0]],damper:[[15,0],[30,0],[34,5],[40,4],[48,8],[54,22],[60,20],[70,14],[80,11],[90,17],[100,18],[110,15],[120,9],[128,0]]}}
+    }
+  };
+  const LCHC_CASES = {
+    "128-eds-suspension": { diameter:12.8, mass:.404, ei:60.86, tension:6.578, support:"suspension_rods", load:"EDS zona baja/alta", undamped:315, damped:38 },
+    "128-eds-tension": { diameter:12.8, mass:.404, ei:60.86, tension:6.578, support:"tension", load:"EDS zona baja/alta", undamped:104, damped:39 },
+    "128-wind_low-suspension": { diameter:12.8, mass:.404, ei:60.86, tension:10.202, support:"suspension_rods", load:"viento máximo zona baja", undamped:477, damped:51 },
+    "128-wind_low-tension": { diameter:12.8, mass:.404, ei:60.86, tension:10.202, support:"tension", load:"viento máximo zona baja", undamped:153, damped:61 },
+    "128-wind_high-suspension": { diameter:12.8, mass:.404, ei:60.86, tension:16.241, support:"suspension_rods", load:"viento máximo zona alta", undamped:691, damped:84 },
+    "128-wind_high-tension": { diameter:12.8, mass:.404, ei:60.86, tension:16.241, support:"tension", load:"viento máximo zona alta", undamped:216, damped:74 },
+    "128-ice_high-suspension": { diameter:12.8, mass:.404, ei:60.86, tension:12.094, support:"suspension_rods", load:"hielo zona alta", undamped:822, damped:85 },
+    "128-ice_high-tension": { diameter:12.8, mass:.404, ei:60.86, tension:12.094, support:"tension", load:"hielo zona alta", undamped:246, damped:41 },
+    "133-eds-suspension": { diameter:13.3, mass:.401, ei:87.64, tension:5.292, support:"suspension_rods", load:"EDS zona baja", undamped:248, damped:28 },
+    "133-eds-tension": { diameter:13.3, mass:.401, ei:87.64, tension:5.292, support:"tension", load:"EDS zona baja", undamped:105, damped:38 },
+    "133-wind_low-suspension": { diameter:13.3, mass:.401, ei:87.64, tension:8.573, support:"suspension_rods", load:"viento máximo zona baja", undamped:381, damped:36 },
+    "133-wind_low-tension": { diameter:13.3, mass:.401, ei:87.64, tension:8.573, support:"tension", load:"viento máximo zona baja", undamped:137, damped:57 },
+    "133-beacons": { diameter:13.3, mass:.410, ei:87.64, tension:14.965, support:"tension", load:"19 balizas, sin hielo", undamped:650, damped:60, beacons:19, span:798.65, damperStrain:25, sphereStrain:32 }
+  };
+  const CAIRO_CURVES = {
+    undamped: {
+      end: [[9,305],[12,390],[15,440],[17,448],[20,430],[23,370],[27,285],[31,205],[36,150],[42,112],[48,78],[55,48],[62,28],[70,22]],
+      antinode: [[9,5.0],[14,4.6],[20,3.8],[27,2.7],[35,1.7],[45,.9],[55,.4],[70,.1]]
+    },
+    2: {
+      end: [[9,28],[12,38],[16,52],[20,70],[24,90],[28,62],[32,52],[36,58],[40,52],[45,38],[50,32],[56,28],[62,22],[68,30],[70,0]],
+      damper: [[9,8],[14,15],[20,22],[24,25],[28,18],[34,28],[38,35],[44,26],[50,16],[58,10],[66,6],[70,0]],
+      motion: [[9,.45],[14,.65],[20,1.05],[24,1.25],[28,.85],[34,1.15],[38,1.35],[44,.75],[52,.45],[62,.22],[70,0]],
+      antinode: [[9,1.8],[15,2.1],[20,2.5],[25,2.2],[32,1.8],[40,1.4],[50,.8],[60,.4],[70,0]]
+    },
+    4: {
+      end: [[9,22],[14,28],[19,35],[23,48],[26,90],[29,86],[32,58],[36,32],[40,45],[44,30],[50,22],[58,18],[66,25],[70,0]],
+      damper: [[9,8],[16,12],[22,20],[26,35],[30,28],[36,18],[42,20],[50,12],[60,8],[68,5],[70,0]],
+      motion: [[9,.45],[16,.60],[22,.95],[26,1.55],[30,1.20],[36,.70],[42,.85],[50,.45],[60,.25],[70,0]],
+      antinode: [[9,1.6],[16,1.8],[22,2.2],[27,2.7],[32,1.8],[40,1.2],[50,.7],[60,.3],[70,0]]
+    }
+  };
+  const CAIRO_SCHEDULE = [
+    ["GM-MANT","208","209",293.6,2],["GM-MANT","208","209",293.6,2],["GM-MANT","208","209",293.6,2],
+    ["GM-MANT","209","209-A",293.6,2],["GM-MANT","209","209-A",293.6,2],["GM-MANT","209","209-A",293.6,2],
+    ["GM-MANT","209-A","ML-1",67.5,0],["GM-MANT","209-A","ML-1",67.1,0],["GM-MANT","209-A","ML-1",62.5,0],
+    ["GM-MANT","ML-2","209-B",78.3,0],["GM-MANT","ML-2","209-B",78.7,0],["GM-MANT","ML-2","209-B",75.1,0],
+    ["GM-MANT","209-B","210",91.3,0],["GM-MANT","209-B","210",91.3,0],["GM-MANT","209-B","210",87.3,0],
+    ["GM-MANT","210","211",350.7,4],["GM-MANT","210","211",350.7,4],["GM-MANT","210","211",350.7,4],
+    ["GM-ESLA","27-B","27-C",53.3,0],["GM-ESLA","27-B","27-C",54.0,0],["GM-ESLA","27-B","27-C",54.7,0],
+    ["GM-ESLA","27-C","ML-1",30.1,0],["GM-ESLA","27-C","ML-1",29.9,0],["GM-ESLA","27-C","ML-1",29.7,0],
+    ["GM-ESLA","27-B","27-D",55.5,0],["GM-ESLA","27-B","27-D",56.2,0],["GM-ESLA","27-B","27-D",56.9,0],
+    ["GM-ESLA","ML-2","27-D",38.6,0],["GM-ESLA","ML-2","27-D",37.6,0],["GM-ESLA","ML-2","27-D",36.6,0],
+    ["GM-ESLA","27-A","27",523.7,4],["GM-ESLA","27-A","27",523.7,4],["GM-ESLA","27-A","27",523.7,4],
+    ["GM-ESLA","28","27-A",71.4,0],["GM-ESLA","28","27-A",71.4,0],["GM-ESLA","28","27-A",71.5,0],
+    ["GM-ESLA","27-A","27-B",52.4,0],["GM-ESLA","27-A","27-B",52.4,0],["GM-ESLA","27-A","27-B",52.4,0],
+    ["GM-ESLA","27-A","27-B",52.6,0],["GM-ESLA","27-A","27-B",52.5,0],["GM-ESLA","27-A","27-B",52.5,0]
+  ];
+  const FLINT_CURVES = {
+    undamped: {
+      end: [[7,300],[9,350],[11,420],[13,451],[15,440],[18,370],[21,290],[24,215],[28,160],[32,125],[38,85],[45,55],[52,28],[57,22],[59,0]],
+      antinode: [[7,23],[10,22],[13,19],[16,15],[20,10],[24,6],[28,3.5],[34,1.8],[42,.7],[50,.25],[59,0]]
+    },
+    damped: {
+      end: [[9,35],[12,42],[14,72],[15,38],[17,55],[20,57],[22,68],[24,81],[26,67],[30,55],[34,42],[38,28],[42,36],[45,35],[48,18],[52,15],[58,18],[59,0]],
+      damper: [[9,15],[12,18],[14,34],[16,22],[20,28],[24,36],[28,30],[34,20],[40,15],[44,25],[48,10],[55,5],[59,0]],
+      motion: [[9,.55],[12,.65],[14,1.35],[16,.72],[20,1.05],[24,1.45],[28,1.10],[34,.72],[40,.45],[44,.72],[48,.28],[55,.10],[59,0]],
+      antinode: [[9,2.4],[12,2.6],[15,2.0],[20,2.2],[24,2.5],[28,1.8],[34,1.2],[40,.8],[44,1.0],[48,.45],[55,.15],[59,0]]
+    }
+  };
+  const FLINT_TOWER_SCHEDULE = [
+    [1,"Los Cóndores Section #1",71.59],[2,"Combarbalá #14 (SE Combarbalá - E01)",13],[3,"Combarbalá #15 (E01 - E02)",89.82],
+    [4,"Combarbalá #16 (E02 - E03)",155.46],[5,"Combarbalá #17 (E03 - E04)",176.11],[6,"Combarbalá #18 (E04 - E05)",180.88],
+    [7,"Combarbalá #19 (E05 - E06)",155.35],[8,"Combarbalá #20 (E06 - E07)",142.7],[9,"Combarbalá #21 (E07 - E08)",165.84],
+    [10,"Combarbalá #9 (E08 - PC248)",11.03],[11,"Llanos Blancos #2 (SE - E01)",41.71],[12,"Llanos Blancos #3 (E01 - E02)",121.67],
+    [13,"Llanos Blancos #4 (E02 - E03)",209.32],[14,"Llanos Blancos #5 (E03 - E04)",165.29],[15,"Llanos Blancos #6 (E04 - ML1)",25.44],
+    [16,"Llanos Blancos #8 (ML2 - ESP-PE)",49.73],[17,"Llanos Blancos #9 (ML2 - ESP-PE)",47.59],[18,"Llanos Blancos #7 (ML2 - E77)",29.07],
+    [19,"Llanos Blancos #7 (E77 - ESP-PE)",29.07],[20,"Pajonales #4 (SE - E01)",102.24],[21,"Pajonales #5 (E01 - E02)",279.98],
+    [22,"Pajonales #6 (E02 - PM1)",62.18],[23,"Pajonales #1 (PM2 - 02)",33.82],[24,"Pajonales #2 (02 - 08), vano 1",285.16],
+    [25,"Pajonales #2 (02 - 08), vano 2",312.77],[26,"Pajonales #2 (02 - 08), vano 3",339.85],[27,"Pajonales #2 (02 - 08), vano 4",271.81],
+    [28,"Pajonales #2 (02 - 08), vano 5",300.52],[29,"Pajonales #2 (02 - 08), vano 6",307.27],[30,"Pajonales #3 (08 - PM3)",82.49],
+    [31,"Pajonales #9 (PM4 - 11)",118.47],[32,"San Javier #1 (SE - E01)",20.42],[33,"PM04 - E11",120.75],
+    [34,"E11 - E12",88.59],[35,"E12 - SE D/H",87.02]
+  ];
+  const OPGW128_CURVES = {
+    undamped: {
+      end: [[5,50],[10,100],[15,150],[20,210],[25,280],[30,350],[35,400],[40,418],[45,410],[50,380],[55,320],[60,270],[70,190],[80,135],[90,100],[100,80],[110,60]],
+      antinode: [[5,13],[15,12.5],[25,11],[35,9],[45,6.5],[55,4],[65,2.2],[80,1],[95,.45],[110,.2]]
+    },
+    250: {
+      end: [[5,50],[7,45],[9,0],[50,0],[55,20],[60,38],[65,55],[70,68],[75,78],[80,85],[85,88],[90,99],[95,90],[100,65],[105,30],[110,25]],
+      damper: [[5,20],[8,0],[50,0],[55,12],[60,30],[65,48],[70,57],[75,54],[80,45],[85,28],[90,5],[95,25],[100,35],[105,22],[110,10]],
+      motion: [[5,1.4],[8,0],[50,0],[60,.18],[70,.45],[80,.55],[90,.25],[100,.4],[110,.12]],
+      antinode: [[5,14],[8,0],[50,0],[60,1.2],[70,2.2],[80,2.7],[90,2.2],[100,1],[110,.3]]
+    },
+    500: {
+      end: [[5,3],[10,0],[25,0],[30,5],[35,14],[40,0],[60,0],[65,18],[70,28],[80,34],[90,38],[95,45],[100,52],[105,63],[110,45]],
+      damper: [[5,0],[25,0],[30,8],[35,12],[40,0],[60,0],[65,28],[70,62],[75,74],[80,76],[85,70],[90,58],[95,42],[100,32],[105,38],[110,25]],
+      motion: [[5,.15],[10,0],[30,.25],[40,0],[60,0],[70,.55],[80,.7],[90,.55],[100,.45],[110,.2]],
+      antinode: [[5,.3],[10,0],[30,.5],[40,0],[60,0],[70,1],[80,1.4],[90,1.3],[100,.8],[110,.25]]
+    }
+  };
+  const OPGW128_SCHEDULE = [[2,"Llanos Blancos #12 (SE - E01)",51.71],[3,"Llanos Blancos #13 (E01 - E02)",112.36],[4,"Llanos Blancos #14 (E02 - E03)",210.19],[5,"Llanos Blancos #15 (E03 - E04)",164.67],[6,"Llanos Blancos #16 (E04 - ML1)",24.54]];
+  const OPGW128_REV0_SCHEDULE = [[1,"Los Cóndores #2",72.03,2,0],[2,"Llanos Blancos #12 (SE - E01)",42.62,2,0],[3,"Llanos Blancos #13 (E01 - E02)",122.36,2,0],[4,"Llanos Blancos #14 (E02 - E03)",210.19,2,0],[5,"Llanos Blancos #15 (E03 - E04)",164.67,2,0],[6,"Llanos Blancos #16 (E04 - ML1)",25.76,2,0],[7,"Pajonales #10 (SE - E01)",102.59,2,0],[8,"Pajonales #11 (E01 - E02)",280,4,2],[9,"Pajonales #12 (E02 - PM1)",63.42,2,0],[10,"Pajonales #6 (PM2 - 02)",36.66,2,0],[11,"Pajonales #6 (08 - PM3)",83.04,2,0]];
+  const EA16_CURVES = {
+    undamped: {
+      end: [[13,285],[20,470],[30,700],[40,950],[50,1050],[52,1064],[53,1060],[60,995],[70,835],[80,620],[90,490],[100,390],[110,300]]
+    },
+    350: {
+      end: [[13,8],[20,0],[30,0],[35,24],[40,24],[45,2],[50,0],[70,0],[90,3],[95,30],[100,68],[105,112],[110,148]],
+      damper: [[13,1],[30,0],[35,10],[40,9],[50,0],[90,0],[95,20],[100,48],[105,80],[110,110]],
+      motion: [[13,.02],[30,0],[35,.08],[40,.08],[50,0],[90,0],[95,.07],[100,.18],[105,.35],[110,.52]]
+    },
+    700: {
+      end: [[13,6],[25,0],[30,8],[35,35],[40,32],[45,20],[50,4],[55,12],[65,18],[75,15],[85,35],[90,60],[100,55],[110,112]],
+      damper: [[13,1],[30,4],[35,18],[40,13],[50,1],[60,8],[75,12],[85,26],[90,48],[100,45],[110,88]],
+      motion: [[13,.03],[30,0],[35,.12],[40,.08],[50,.02],[60,.08],[75,.06],[85,.18],[90,.25],[100,.22],[110,.42]]
+    },
+    1000: {
+      end: [[13,8],[20,18],[25,45],[30,130],[35,150],[40,148],[45,130],[50,150],[55,142],[65,120],[75,100],[85,75],[90,68],[95,70],[100,45],[105,52],[110,75]],
+      damper: [[13,2],[25,8],[30,15],[35,25],[45,30],[50,38],[55,28],[65,20],[75,10],[85,5],[95,3],[105,8],[110,18]],
+      motion: [[13,.05],[20,.08],[25,.16],[30,.35],[35,.55],[40,.56],[45,.48],[50,.58],[55,.55],[65,.48],[75,.40],[85,.32],[95,.22],[100,.20],[105,.24],[110,.32]]
+    }
+  };
+  const ALUMOWELD_CURVE = [[20,8],[30,6.5],[40,5],[50,4],[60,3.1],[75,2.2],[90,1.5],[105,.8],[120,0]];
+  const MONTEAGUILA_CURVES = {
+    undamped: {
+      end: [[12,306],[15,390],[20,570],[25,760],[30,950],[35,1035],[39,1055],[45,1000],[50,895],[60,650],[70,470],[80,360],[90,290],[100,225],[110,175],[118,150],[125,105]]
+    },
+    damped: {
+      end: [[12,0],[90,0],[95,50],[100,65],[105,83],[110,101],[115,104],[120,99],[125,94]],
+      damper: [[12,0],[90,0],[95,38],[100,51],[105,66],[110,80],[115,87],[120,82],[125,75]],
+      motion: [[12,0],[90,0],[95,.18],[100,.25],[105,.32],[110,.37],[115,.39],[120,.34],[125,.29]]
+    }
+  };
+  const MONTEAGUILA13_CURVES = {
+    undamped: {
+      end: [[14,263],[20,410],[25,570],[30,710],[35,820],[40,841],[45,830],[50,780],[60,690],[70,590],[80,480],[90,415],[100,380],[110,330],[120,270],[125,245]]
+    },
+    damped: {
+      end: [[14,0],[108,0],[110,20],[112,25],[115,40],[118,65],[120,80],[123,100],[125,100]],
+      damper: [[14,0],[108,0],[110,15],[112,20],[115,32],[118,48],[120,58],[123,72],[125,70]],
+      motion: [[14,0],[108,0],[110,.04],[112,.08],[115,.12],[118,.18],[120,.23],[123,.27],[125,.26]]
+    }
+  };
+  const ACAR500_CURVES = {
+    undamped: {
+      end: [[9,180],[10,335],[12,430],[14,450],[16,390],[18,350],[20,330],[23,275],[26,245],[30,210],[32,165],[36,125],[40,100],[45,70],[50,45],[60,25],[70,18],[125,0]],
+      spacer: [[9,70],[11,125],[14,150],[17,135],[20,120],[24,110],[28,90],[32,70],[36,55],[42,35],[50,18],[60,10],[70,5],[125,0]]
+    },
+    170: {
+      end: [[9,5],[15,8],[20,15],[25,20],[30,30],[34,35],[40,24],[50,14],[60,8],[70,3],[125,0]],
+      spacer: [[9,2],[20,7],[30,15],[34,18],[40,12],[55,6],[70,2],[125,0]],
+      motion: [[9,.02],[20,.08],[30,.22],[34,.30],[40,.18],[55,.07],[70,.02],[125,0]]
+    },
+    "450bare": {
+      end: [[9,18],[14,27],[18,38],[22,50],[26,58],[30,62],[34,48],[38,35],[45,22],[55,12],[70,3],[125,0]],
+      spacer: [[9,8],[16,17],[22,28],[28,40],[32,48],[36,40],[45,25],[55,12],[70,3],[125,0]],
+      motion: [[9,.12],[16,.28],[22,.42],[28,.58],[32,.62],[36,.50],[45,.28],[55,.12],[70,.02],[125,0]]
+    },
+    "450rods": {
+      end: [[9,10],[14,18],[18,28],[22,38],[26,48],[30,58],[34,52],[38,38],[45,24],[55,12],[70,3],[125,0]],
+      spacer: [[9,5],[16,12],[22,22],[28,35],[32,44],[36,36],[45,22],[55,10],[70,2],[125,0]],
+      motion: [[9,.18],[16,.35],[22,.48],[28,.68],[32,.72],[36,.58],[45,.32],[55,.14],[70,.03],[125,0]]
+    }
+  };
+  const GREELEY_CURVES = {
+    undamped_tension: {
+      end: [[7,350],[10,440],[13,560],[16,630],[18,650],[20,630],[23,550],[26,430],[30,330],[35,235],[40,180],[45,140],[50,105],[55,65],[60,40],[65,0]]
+    },
+    undamped_suspension: {
+      end: [[7,225],[10,315],[13,410],[16,465],[18,480],[20,465],[23,390],[26,300],[30,220],[35,160],[40,115],[45,82],[50,58],[55,35],[60,22],[65,0]]
+    },
+    125: {
+      tension: { end:[[7,8],[12,16],[16,48],[20,50],[24,33],[30,25],[36,15],[40,0],[65,0]], damper:[[7,1],[15,5],[20,15],[25,10],[32,4],[40,0],[65,0]], motion:[[7,.16],[12,.18],[16,.35],[18,.60],[21,.58],[25,.38],[32,.18],[40,0],[65,0]] },
+      suspension: { end:[[7,8],[13,12],[17,32],[20,35],[25,25],[32,18],[40,0],[52,0],[55,25],[60,15],[65,0]], damper:[[7,2],[15,7],[20,25],[25,18],[32,8],[40,0],[52,0],[55,15],[60,10],[65,0]], motion:[[7,.25],[12,.28],[16,.48],[18,.92],[20,.94],[23,.62],[28,.36],[36,.18],[40,0],[52,0],[55,.16],[65,0]] }
+    },
+    250: {
+      tension: { end:[[7,8],[12,15],[16,45],[20,48],[25,30],[32,15],[40,0],[65,0]], damper:[[7,1],[16,5],[20,14],[26,10],[35,4],[40,0],[65,0]], motion:[[7,.16],[13,.22],[17,.55],[19,.60],[23,.42],[30,.20],[40,0],[65,0]] },
+      suspension: { end:[[7,7],[13,10],[17,30],[20,35],[25,24],[33,10],[40,0],[52,0],[55,22],[65,0]], damper:[[7,2],[15,6],[20,30],[25,20],[33,7],[40,0],[52,0],[55,13],[65,0]], motion:[[7,.25],[13,.30],[17,.58],[19,.94],[22,.66],[27,.38],[35,.18],[40,0],[52,0],[55,.15],[65,0]] }
+    },
+    350: {
+      tension: { end:[[7,10],[12,16],[16,40],[20,38],[25,25],[32,22],[40,10],[44,0],[65,0]], damper:[[7,2],[16,7],[20,20],[25,12],[32,16],[40,6],[44,0],[65,0]], motion:[[7,.28],[12,.20],[16,.38],[18,.76],[21,.40],[26,.30],[34,.24],[42,.12],[44,0],[65,0]] },
+      suspension: { end:[[7,7],[14,10],[18,30],[22,24],[28,18],[38,9],[44,0],[50,0],[55,20],[60,18],[65,0]], damper:[[7,2],[15,5],[19,25],[24,16],[30,18],[40,8],[44,0],[50,0],[55,14],[60,12],[65,0]], motion:[[7,.34],[12,.20],[16,.38],[18,.78],[22,.48],[26,.25],[32,.28],[40,.20],[44,0],[50,0],[55,.18],[60,.16],[65,0]] }
+    },
+    500: {
+      tension: { end:[[7,12],[13,17],[17,42],[21,32],[26,18],[32,24],[40,14],[45,7],[47,0],[65,0]], damper:[[7,3],[15,8],[19,23],[24,12],[31,18],[40,10],[46,5],[47,0],[65,0]], motion:[[7,.35],[12,.30],[16,.50],[18,.94],[21,.52],[26,.30],[32,.36],[40,.26],[46,.14],[47,0],[65,0]] },
+      suspension: { end:[[7,8],[13,9],[18,28],[22,17],[28,12],[35,14],[43,7],[48,5],[54,20],[60,0],[65,0]], damper:[[7,2],[15,5],[19,22],[24,11],[32,15],[42,6],[48,5],[54,14],[60,0],[65,0]], motion:[[7,.44],[12,.30],[16,.52],[18,.95],[21,.48],[27,.20],[32,.28],[40,.14],[48,.18],[54,.20],[60,0],[65,0]] }
+    }
+  };
+  const DOC1058_CURVES = {
+    undamped: { end:[[7,205],[9,235],[11,285],[13,330],[15,355],[17,350],[20,310],[23,240],[26,195],[30,150],[35,115],[40,85],[45,65],[50,45],[55,30],[60,20],[61,0]] },
+    damped: {
+      end:[[7,26],[9,38],[11,45],[12,44],[14,28],[15,0],[61,0]],
+      damper:[[7,4],[9,16],[11,27],[13,22],[15,0],[61,0]],
+      power:[[5,0],[7,1.4],[9,.65],[12,.35],[16,1.2],[20,.8],[25,.55],[30,.7],[32,.5],[35,1.3],[38,1.75],[43,1.6],[48,2.7],[50,2.8],[55,2.5],[60,2.1],[70,1.5],[80,1],[90,.7],[100,.5]]
+    }
+  };
+  const EA15_OPGW_CURVES = {
+    undamped: {
+      end: [[9,215],[11,275],[14,350],[17,400],[20,410],[23,390],[26,310],[30,230],[34,175],[38,145],[42,115],[48,80],[55,52],[62,35],[70,25],[78,20],[80,0],[125,0]]
+    },
+    250: {
+      end: [[9,28],[12,34],[15,31],[18,45],[21,60],[24,78],[27,80],[30,62],[34,52],[38,44],[45,28],[52,18],[60,14],[70,18],[78,15],[80,0],[125,0]],
+      damper: [[9,3],[15,5],[21,12],[27,25],[32,15],[40,10],[50,5],[65,4],[78,2],[80,0],[125,0]],
+      motion: [[9,.55],[12,.65],[15,.52],[18,.78],[21,.65],[24,.88],[27,1.20],[30,.92],[34,.70],[38,.62],[45,.30],[52,.18],[65,.16],[78,.10],[80,0],[125,0]]
+    },
+    500: {
+      end: [[9,26],[12,35],[16,31],[20,47],[24,64],[27,79],[30,65],[35,51],[40,42],[48,26],[55,16],[65,14],[75,18],[80,0],[125,0]],
+      damper: [[9,3],[16,5],[22,12],[27,24],[32,16],[40,10],[50,5],[65,4],[78,2],[80,0],[125,0]],
+      motion: [[9,.55],[12,.68],[16,.55],[20,.76],[24,.88],[27,1.20],[30,.90],[35,.68],[40,.58],[48,.28],[55,.17],[68,.15],[78,.10],[80,0],[125,0]]
+    },
+    630: {
+      end: [[9,8],[12,6],[16,5],[20,8],[24,15],[28,12],[32,5],[36,8],[40,16],[44,15],[48,5],[50,0],[125,0]],
+      damper: [[9,2],[14,3],[20,5],[24,9],[28,7],[34,4],[40,10],[44,22],[48,5],[50,0],[125,0]],
+      motion: [[9,.32],[12,.18],[18,.17],[22,.28],[25,.40],[28,.30],[32,.12],[36,.18],[40,.28],[44,.36],[48,.10],[50,0],[125,0]]
+    }
+  };
+  const ACAR1000_CURVES = {
+    undamped: {
+      end: [[6,140],[7,290],[8,350],[9,410],[10,485],[12,360],[14,285],[16,230],[18,200],[21,155],[24,125],[28,95],[32,70],[38,45],[45,28],[50,20],[60,0]],
+      spacer: [[6,35],[8,60],[10,85],[13,78],[17,72],[21,65],[26,48],[32,30],[40,18],[50,8],[60,0]]
+    },
+    118: {
+      end: [[6,10],[10,20],[14,30],[18,50],[22,55],[26,45],[32,55],[38,45],[45,50],[52,70],[60,0]],
+      spacer: [[6,4],[12,8],[18,17],[24,23],[32,18],[40,20],[50,28],[58,22],[60,0]],
+      motion: [[6,.15],[12,.30],[18,.55],[24,.95],[30,.60],[38,.80],[46,.65],[54,.85],[60,0]]
+    },
+    300: {
+      end: [[6,20],[10,35],[14,50],[18,80],[22,90],[26,65],[32,45],[40,30],[50,22],[60,0]],
+      spacer: [[6,5],[12,12],[18,28],[22,48],[28,30],[36,20],[48,15],[58,10],[60,0]],
+      motion: [[6,.35],[10,.62],[14,.82],[18,1.15],[22,1.30],[26,.80],[32,.42],[40,.22],[50,.15],[60,0]]
+    },
+    550: {
+      end: [[6,18],[10,30],[14,42],[18,68],[22,70],[26,48],[32,30],[40,20],[50,15],[60,0]],
+      spacer: [[6,4],[12,10],[18,25],[22,45],[28,28],[36,18],[48,12],[58,8],[60,0]],
+      motion: [[6,.32],[10,.58],[14,.78],[18,1.10],[22,1.35],[26,.78],[32,.38],[40,.20],[50,.12],[60,0]]
+    },
+    630: {
+      end: [[6,15],[10,25],[14,30],[18,40],[22,36],[26,25],[32,18],[40,12],[50,8],[60,0]],
+      spacer: [[6,4],[12,8],[18,15],[22,22],[28,14],[36,10],[48,7],[58,4],[60,0]],
+      motion: [[6,.28],[10,.52],[14,.62],[18,.78],[22,.76],[26,.50],[32,.28],[40,.16],[50,.08],[60,0]]
+    }
+  };
+  let catalog = [];
+  let dampers = [];
+  let lastRows = [];
+  let currentReference = null;
+  let diagramZoom = 1;
+  let lchcEs007Allocation = {};
+
+  function number(id) {
+    return Number.parseFloat($(id).value);
+  }
+
+  function massText(item) {
+    return Number.isFinite(item.mass_kg) ? `${item.mass_kg.toFixed(2)} kg` : "masa no indicada";
+  }
+
+  function finitePositive(value, label) {
+    if (!Number.isFinite(value) || value <= 0) throw new Error(`${label} debe ser mayor que cero.`);
+    return value;
+  }
+
+  function addFieldHelpers() {
+    const helpers = {
+      preset: "Selecciona el estudio documental que se cargará como referencia y banco de comparación.",
+      analysisMode: "Define si se reproducen las curvas del PDF o si se ejecuta un balance de energía nuevo.",
+      span: "Longitud entre apoyos; interviene en la energía total del vano y en la cantidad y posición recomendada de amortiguadores.",
+      spanSlider: "Modifica rápidamente el vano y actualiza la recomendación de instalación.",
+      diam: "Diámetro exterior; afecta la excitación eólica IEC, Reynolds, velocidad de desprendimiento y compatibilidad de grapas.",
+      mass: "Masa lineal del conductor; modifica la longitud de onda, la respuesta modal y las frecuencias naturales.",
+      tension: "Tensión mecánica del vano; controla la longitud de onda y participa en la ley de autoamortiguamiento cuando n no es cero.",
+      ei: "Rigidez a flexión central; influye en la longitud de onda y en la curvatura/deformación del conductor.",
+      H: "Coeficiente de autoamortiguamiento Mosdorfer, usado únicamente en el modelo heredado.",
+      sdn: "Exponente de la longitud de onda en la ecuación Mosdorfer heredada.",
+      sdm: "Exponente de amplitud de la ecuación Mosdorfer heredada; determina cuánto crece la disipación con la vibración.",
+      cigreSystemType: "El motor independiente admite cable simple; los haces múltiples requieren matrices modales y datos de separadores.",
+      cigreSource: "Identifica informe, laboratorio, revisión y fecha para asegurar la trazabilidad de los datos medidos.",
+      selfDampingMode: "Selecciona la ley que representa la potencia disipada internamente por el conductor.",
+      cigreK: "Coeficiente medido k de Pc/L = k·y₀ˡ·fᵐ·Tⁿ; su valor fija el nivel de autoamortiguamiento.",
+      cigreTUnit: "Indica si la tensión usada para calibrar k estaba expresada en N o kN; una unidad incorrecta altera Pc por Tⁿ.",
+      cigreL: "Exponente l de la amplitud pico; controla la sensibilidad del autoamortiguamiento al movimiento.",
+      cigreM: "Exponente m de la frecuencia; controla cómo cambia el autoamortiguamiento a lo largo del barrido.",
+      cigreN: "Exponente n de la tensión; define la dependencia del autoamortiguamiento con la carga mecánica.",
+      eiMin: "Límite inferior medido o justificado de EJ usado para construir la envolvente de resultados.",
+      eiMax: "Límite superior de EJ; junto con EJ mínimo cuantifica la incertidumbre por rigidez del conductor.",
+      airTemp: "Temperatura usada para calcular densidad y viscosidad del aire, Reynolds y diagnóstico de Strouhal.",
+      altitude: "Corrige presión y densidad del aire según la elevación del proyecto.",
+      stMode: "Usa Strouhal fijo o lo estima de forma diagnóstica a partir de Reynolds y rugosidad.",
+      roughness: "Rugosidad superficial relativa ε/D; puede modificar el régimen aerodinámico y Strouhal.",
+      turbulence: "Nivel de turbulencia del sitio; valores altos advierten limitaciones del EBP estacionario.",
+      windUncertainty: "Variación porcentual de la potencia eólica para formar los límites inferior y superior.",
+      dampingUncertainty: "Variación porcentual del autoamortiguamiento y accesorios empleada en la envolvente.",
+      strainTransfer: "Factor medido que convierte la deformación ideal del antinodo en deformación del punto de control.",
+      damperDataMode: "Define si la disipación del amortiguador procede de ensayos dinámicos o de un coeficiente heredado.",
+      damperDynamicData: "Superficie medida frecuencia–velocidad de grapa–potencia; determina la energía absorbida por cada amortiguador.",
+      motionLimitLow: "Movimiento pico admisible de la grapa del amortiguador para frecuencias menores de 10 Hz.",
+      motionLimitHigh: "Movimiento pico admisible de la grapa del amortiguador desde 10 Hz en adelante.",
+      fmin: "Primera frecuencia evaluada; debe cubrir el extremo inferior del rango eólico de interés.",
+      fmax: "Última frecuencia evaluada; debe cubrir las resonancias relevantes del conductor y amortiguador.",
+      fstep: "Separación entre frecuencias; un paso menor aumenta resolución y tiempo de cálculo.",
+      st: "Número de Strouhal fijo usado para convertir frecuencia en velocidad V=f·D/St.",
+      limitEnd: "Deformación máxima admisible usada para contar frecuencias fuera de límite.",
+      windFactor: "Multiplicador explícito de la potencia eólica; 1 conserva IEC y otros valores representan una hipótesis declarada.",
+      recommendationRule: "Selecciona la pauta documental que determina cantidades y distancias de instalación.",
+      supportType: "Geometría del apoyo izquierdo; cambia el origen desde el que se mide la primera unidad.",
+      supportTypeB: "Geometría del apoyo derecho; puede producir una distancia distinta en ese extremo.",
+      family: "Restringe el catálogo a una familia de amortiguadores o separadores.",
+      catalog: "Modelo de accesorio compatible con la familia y el diámetro del conductor.",
+      pos: "Distancia desde el extremo del vano hasta la grapa; define el movimiento local y la potencia absorbida.",
+      dcoef: "Coeficiente equivalente usado solo en el modelo heredado cuando no existe curva dinámica medida."
+    };
+    Object.entries(helpers).forEach(([id, description]) => {
+      const control = $(id);
+      if (!control || $(`help-${id}`)) return;
+      const help = document.createElement("small");
+      help.id = `help-${id}`;
+      help.className = "field-help";
+      help.textContent = description;
+      const anchor = id === "catalog" ? control.closest(".catalog-picker") : control;
+      anchor.insertAdjacentElement("afterend", help);
+      control.title = description;
+      control.setAttribute("aria-describedby", help.id);
+      if (id === "catalog") $("catalogToggle").title = description;
+    });
+  }
+
+  function fncIEC(ratio) {
+    if (!(ratio > 0)) return 0;
+    const x = Math.log10(ratio);
+    let z = 0;
+    for (let n = 0; n < IEC.length; n += 1) z += IEC[n] * x ** n;
+    return 10 ** z;
+  }
+
+  function airProperties(temperatureC, altitudeM) {
+    const temperatureK = temperatureC + 273.15;
+    if (!(temperatureK > 0)) throw new Error("La temperatura del aire debe ser mayor que -273,15 °C.");
+    const altitude = Math.max(0, altitudeM || 0);
+    const pressure = 101325 * Math.max(0.05, 1 - 2.25577e-5 * altitude) ** 5.25588;
+    const density = pressure / (287.058 * temperatureK);
+    const dynamicViscosity = 1.716e-5 * (temperatureK / 273.15) ** 1.5 * (273.15 + 111) / (temperatureK + 111);
+    return { pressure, density, dynamicViscosity, kinematicViscosity: dynamicViscosity / density };
+  }
+
+  function strouhalFromReynolds(reynolds, roughness) {
+    if (!(reynolds > 0)) return 0.2;
+    if (reynolds < 300) return Math.max(0.12, Math.min(0.2, 0.198 * (1 - 19.7 / Math.max(20, reynolds))));
+    if (reynolds < 2e5) return Math.max(0.18, Math.min(0.205, 0.198 * (1 - 19.7 / reynolds)));
+    if (reynolds <= 2e6 && roughness >= 0.003) return 0.25;
+    return 0.2;
+  }
+
+  function aerodynamicState(frequency, diameter, fixedStrouhal, mode, air, roughness) {
+    let strouhal = fixedStrouhal;
+    for (let i = 0; i < 12; i += 1) {
+      const velocity = frequency * diameter / strouhal;
+      const reynolds = velocity * diameter / air.kinematicViscosity;
+      if (mode !== "auto") return { velocity, reynolds, strouhal };
+      const next = strouhalFromReynolds(reynolds, roughness);
+      if (Math.abs(next - strouhal) < 1e-6) return { velocity, reynolds, strouhal: next };
+      strouhal = next;
+    }
+    const velocity = frequency * diameter / strouhal;
+    return { velocity, reynolds: velocity * diameter / air.kinematicViscosity, strouhal };
+  }
+
+  function conductorWavelength(frequency, flexuralStiffness, tension, mass) {
+    if (!(flexuralStiffness > 0)) return Math.sqrt(tension / mass) / frequency;
+    const a = 4 * Math.PI ** 2 * flexuralStiffness;
+    const q = (-tension + Math.sqrt(tension ** 2 + 4 * a * mass * frequency ** 2)) / (2 * a);
+    return 1 / Math.sqrt(q);
+  }
+
+  function parseDamperDynamicData() {
+    const raw = $("damperDynamicData").value.trim();
+    if (!raw) return [];
+    let data;
+    try { data = JSON.parse(raw); } catch (error) { throw new Error(`JSON dinámico inválido: ${error.message}`); }
+    if (!Array.isArray(data) || !data.length) throw new Error("Los datos dinámicos deben ser un arreglo JSON no vacío.");
+    return data.map((row, index) => {
+      const frequency = Number(row.frequency_hz ?? row.f);
+      const velocity = Number(row.clamp_velocity_m_s ?? row.velocity);
+      const power = Number(row.power_w ?? row.power);
+      if (!(frequency > 0) || !(velocity > 0) || !(power >= 0)) throw new Error(`Dato dinámico ${index + 1}: frecuencia y velocidad deben ser positivas; potencia no negativa.`);
+      return { frequency, velocity, power };
+    }).sort((a, b) => a.frequency - b.frequency || a.velocity - b.velocity);
+  }
+
+  function interpolateVelocityPower(points, velocity) {
+    if (!(velocity > 0) || !points.length) return 0;
+    const sorted = points.slice().sort((a, b) => a.velocity - b.velocity);
+    if (velocity <= sorted[0].velocity) return sorted[0].power * velocity / sorted[0].velocity;
+    for (let i = 1; i < sorted.length; i += 1) {
+      if (velocity <= sorted[i].velocity) {
+        const a = sorted[i - 1], b = sorted[i], t = (velocity - a.velocity) / (b.velocity - a.velocity);
+        return a.power + (b.power - a.power) * t;
+      }
+    }
+    const last = sorted.at(-1);
+    return last.power * (velocity / last.velocity) ** 2;
+  }
+
+  function measuredDamperPower(data, frequency, clampVelocity) {
+    if (!data.length || !(clampVelocity > 0)) return 0;
+    const groups = new Map();
+    data.forEach((point) => {
+      const key = point.frequency;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(point);
+    });
+    const frequencies = [...groups.keys()].sort((a, b) => a - b);
+    const at = (f) => interpolateVelocityPower(groups.get(f), clampVelocity);
+    if (frequency <= frequencies[0]) return at(frequencies[0]);
+    if (frequency >= frequencies.at(-1)) return at(frequencies.at(-1));
+    for (let i = 1; i < frequencies.length; i += 1) {
+      if (frequency <= frequencies[i]) {
+        const f0 = frequencies[i - 1], f1 = frequencies[i], t = (frequency - f0) / (f1 - f0);
+        return at(f0) + (at(f1) - at(f0)) * t;
+      }
+    }
+    return 0;
+  }
+
+  async function loadCatalog() {
+    const [response,allocationResponse] = await Promise.all([fetch("catalogo_amortiguadores.json", { cache: "no-store" }),fetch("lchc_es007_allocation.json",{cache:"no-store"})]);
+    if (!response.ok) throw new Error(`No se pudo cargar el catálogo: HTTP ${response.status}`);
+    if (!allocationResponse.ok) throw new Error(`No se pudo cargar la tabla LCHC-ES-007: HTTP ${allocationResponse.status}`);
+    catalog = await response.json(); lchcEs007Allocation=await allocationResponse.json();
+    if (!Array.isArray(catalog) || !catalog.length) throw new Error("El catálogo está vacío.");
+    const families = [...new Set(catalog.map((x) => x.family))].sort();
+    $("family").innerHTML = '<option value="">Todas</option>' + families.map((f) => `<option value="${f}">${f}</option>`).join("");
+    filterCatalog();
+    $("loadPreset").disabled = false;
+    updateRecommendation();
+  }
+
+  function compatibleItems() {
+    const family = $("family").value;
+    const diameter = number("diam");
+    if (currentReference?.mode === "farellon") return catalog.filter((x) => x.reference === currentReference.data.model);
+    const rodsModel = currentReference?.mode === "charrua" ? currentReference.data.model : $("recommendationRule").value === "doc1058" ? "VSD-35.." : $("recommendationRule").value === "monteaguila13" ? "AMG-050926" : ["acar1000", "greeley", "greeley_beacons"].includes($("recommendationRule").value) ? "AMG-152429" : ["ea15opgw", "ea15opgw_beacons"].includes($("recommendationRule").value) ? "AMG-091534" : ["ea16", "monteaguila", "acar500"].includes($("recommendationRule").value) ? "AMG-091526" : null;
+    if (rodsModel && family === "amortiguador_SAPREM_AMG") return catalog.filter((x) => x.reference === rodsModel);
+    return catalog.filter((x) => (!family || x.family === family) && ((x.diameter_min_mm <= diameter && diameter <= x.diameter_max_mm) || (rodsModel && x.reference === rodsModel)));
+  }
+
+  function diameterGap(item, diameter) {
+    if (diameter < item.diameter_min_mm) return item.diameter_min_mm - diameter;
+    if (diameter > item.diameter_max_mm) return diameter - item.diameter_max_mm;
+    return 0;
+  }
+
+  function filterCatalog() {
+    const family = $("family").value;
+    const diameter = number("diam");
+    const items = compatibleItems();
+    const familyItems = catalog.filter((x) => !family || x.family === family);
+    const nearest = [...familyItems].sort((a, b) => diameterGap(a, diameter) - diameterGap(b, diameter)).slice(0, 3);
+    $("catalog").innerHTML = items.length
+      ? items.map((x) => `<option value="${catalog.indexOf(x)}">${x.reference} — ${x.family} — ${massText(x)}</option>`).join("")
+      : '<option value="">Sin modelos compatibles</option>';
+    $("catalogMenu").innerHTML = items.length ? items.map((x) => {
+      const index = catalog.indexOf(x);
+      const image = imageByFamily[x.family] || "assets/amortiguador-sd.png";
+      return `<button type="button" class="catalog-option" data-catalog-index="${index}"><img src="${image}" alt=""><span><strong>${x.reference}</strong><small>${x.family} · Ø ${x.diameter_min_mm}-${x.diameter_max_mm} mm · ${massText(x)}</small></span></button>`;
+    }).join("") : nearest.length ? `<div class="hint" style="padding:10px"><strong>No compatibles con Ø ${diameter.toFixed(2)} mm.</strong><br>Modelos más cercanos:</div>` + nearest.map((x) => {
+      const image = imageByFamily[x.family] || "assets/amortiguador-sd.png";
+      return `<div class="catalog-option" aria-disabled="true"><img src="${image}" alt=""><span><strong>${x.reference}</strong><small>Requiere Ø ${x.diameter_min_mm}-${x.diameter_max_mm} mm · diferencia ${diameterGap(x, diameter).toFixed(2)} mm</small></span></div>`;
+    }).join("") : '<div class="hint" style="padding:10px">No hay modelos cargados para esta familia.</div>';
+    document.querySelectorAll("[data-catalog-index]").forEach((button) => {
+      button.addEventListener("click", () => {
+        $("catalog").value = button.dataset.catalogIndex;
+        $("catalogMenu").hidden = true;
+        $("catalogToggle").setAttribute("aria-expanded", "false");
+        updateCatalogPreview();
+      });
+    });
+    $("add").disabled = !items.length;
+    updateCatalogPreview();
+  }
+
+  function updateCatalogPreview() {
+    const index = Number.parseInt($("catalog").value, 10);
+    const item = Number.isInteger(index) ? catalog[index] : null;
+    if (!item) {
+      const family = $("family").value;
+      const diameter = number("diam");
+      const familyImage = imageByFamily[family] || "assets/amortiguador-sd.png";
+      const familyItems = catalog.filter((x) => !family || x.family === family);
+      const closest = [...familyItems].sort((a, b) => diameterGap(a, diameter) - diameterGap(b, diameter))[0];
+      $("catalogImage").src = familyImage;
+      $("catalogToggleImage").src = familyImage;
+      $("catalogToggleText").textContent = "Sin modelos compatibles";
+      $("catalogInfo").innerHTML = closest ? `<strong>${family || "Familia seleccionada"}</strong><br>El conductor es Ø ${diameter.toFixed(2)} mm. El modelo más cercano es ${closest.reference}, válido para Ø ${closest.diameter_min_mm}-${closest.diameter_max_mm} mm; faltan ${diameterGap(closest, diameter).toFixed(2)} mm para entrar en su rango.` : "No hay accesorios cargados para la familia elegida.";
+      return;
+    }
+    $("catalogImage").src = imageByFamily[item.family] || "assets/amortiguador-sd.png";
+    $("catalogToggleImage").src = imageByFamily[item.family] || "assets/amortiguador-sd.png";
+    $("catalogToggleText").textContent = `${item.reference} — ${massText(item)}`;
+    const details = [];
+    if (item.length_mm) details.push(`Longitud ${item.length_mm} mm`);
+    if (item.overall_length_mm) details.push(`Longitud total ${item.overall_length_mm} mm`);
+    if (item.dimension_B_mm) details.push(`B ${item.dimension_B_mm} mm`);
+    if (item.clamp) details.push(`Grapa ${item.clamp}`);
+    if (item.large_weight && item.small_weight) details.push(`Masas ${item.large_weight}/${item.small_weight}`);
+    if (item.L1_mm) details.push(`L1/L2 ${item.L1_mm}/${item.L2_mm} mm`);
+    if (item.torque_Nm) details.push(`Par ${item.torque_Nm} Nm`);
+    if (item.bolt) details.push(`Tornillo ${item.bolt}`);
+    if (item.standard) details.push(item.standard);
+    if (item.short_circuit_compression_daN) details.push(`Cortocircuito: compresión ${item.short_circuit_compression_daN} daN / tracción ${item.short_circuit_tension_daN} daN`);
+    if (item.slip_test_daN) details.push(`Deslizamiento ${item.slip_test_daN} daN`);
+    $("catalogInfo").innerHTML = `<strong>${item.reference}</strong><br>${item.family} · Ø ${item.diameter_min_mm}-${item.diameter_max_mm} mm · ${massText(item)}${details.length ? ` · ${details.join(" · ")}` : ""}`;
+  }
+
+  function addDamper() {
+    const index = Number.parseInt($("catalog").value, 10);
+    if (!Number.isInteger(index) || !catalog[index]) return;
+    dampers.push({ catalog: catalog[index], position: Math.max(0, number("pos") || 0), coef: Math.max(0, number("dcoef") || 0) });
+    renderDampers();
+    setStatus(`${catalog[index].reference} añadido al estudio.`, "ok");
+  }
+
+  function setValue(id, value) {
+    $(id).value = String(value);
+  }
+
+  function loadPreset() {
+    const key = $("preset").value;
+    $("cigreSystemType").value = /^(tr792-|charrua-bundle-|lchc007-|ea26-|acar1000-|acar500-)/.test(key) ? "bundle" : "single";
+    $("analysisMode").value = "reference";
+    $("cigrePanel").hidden = true;
+    if(key.startsWith("tr739-")||key==="tr743-power"){
+      const optical=key.startsWith("tr739-"),scenario=optical?key.slice(6):"power",adequate=scenario==="adequate";
+      Object.entries(optical?{span:20.015,diam:17.8816,mass:"",tension:25.844,ei:"",H:0,sdn:0,sdm:2,fmin:0,fmax:adequate?22:15,fstep:.1,st:.2,limitEnd:.03,windFactor:1}:{span:250,diam:12.2,mass:"",tension:19.7,ei:"",H:0,sdn:0,sdm:2,fmin:16,fmax:106,fstep:1,st:.185,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[];const reference=optical?"5050106":"5050105",svd=catalog.find((item)=>item.reference===reference),quantity=optical?(adequate?3:1):1;
+      if(svd)Array.from({length:quantity},(_,index)=>dampers.push({catalog:svd,position:optical?0:.13,coef:0,testUnit:index+1}));
+      $("family").value="amortiguador_PLP_SVD"; $("recommendationRule").value="auto"; $("supportType").value="suspension_rods"; $("supportTypeB").value="suspension_rods";
+      currentReference={mode:"plp_svd_test",testType:optical?"optical":"power",scenario,title:optical?`TR-739-E · OPGW 0,704 in · ${adequate?"3 SVD / 22 millones de ciclos":"1 SVD / 15 millones de ciclos"}`:"TR-743-E · SVD 5050105 · curva de potencia"};
+      renderDampers();filterCatalog();syncSliderFromInput();updateRecommendation();
+      $("recommendationText").innerHTML='<strong>Sin recomendación automática de terreno.</strong><br>Este antecedente caracteriza un ensayo SVD de laboratorio; no define cantidad por vano ni una pauta de instalación extrapolable.';
+      $("referenceInfo").innerHTML=optical?`<strong>${currentReference.title}</strong><br>Ensayo de laboratorio PLP a ${adequate?"46,7":"47"} Hz · tensión 25,844 kN (25 % RBS) · OPGW Ø17,8816 mm.<br><span class="hint">${adequate?"Amplitud de antinodo 0,04 in pp; tres SVD subsetted; 22 millones de ciclos; cambio óptico máximo 0,03 dBm.":"Amplitud inicial 0,23 in pp, reducida a 0,09 in pp por un SVD; 15 millones de ciclos; cambio óptico máximo 0,02 dBm."} Sin daño al OPGW o al SVD. Es un ensayo de durabilidad, no una pauta de vano.</span>`:`<strong>${currentReference.title}</strong><br>OPGW Ø12,2 mm · tensión 19,7 kN · vano de ensayo 30 m · SVD 5050105 a 130 mm de la grapa.<br><span class="hint">Método de potencia basado en E/ML 23 e IEEE 664-1993; barrido 16-106 Hz. Se compara potencia disipada medida con potencia eólica calculada para un vano de 250 m a la amplitud de ensayo. La curva no incluye velocidad de grapa y no es una superficie dinámica completa.</span>`;
+      clearResultsOnly();setStatus(`Caso ${optical?"TR-739-E":"TR-743-E"} cargado. Pulse Calcular estudio para reproducir el ensayo.`,"ok");return;
+    }
+    if (key.startsWith("tr792-")) {
+      const [, spanText, scenario] = key.split("-");
+      const span = Number(spanText), data = TR792_CASES[span], subspan = scenario === "subspan", damped = scenario === "damped";
+      if (!data) throw new Error("Caso TR 792 no reconocido.");
+      Object.entries({ span, diam:38.69, mass:2.348, tension:subspan?23.8:data.tension, ei:2806.1, H:data.dampingK, sdn:4.35, sdm:2.35, fmin:5, fmax:subspan?30:24, fstep:.5, st:.185, limitEnd:75, windFactor:1 }).forEach(([id,value])=>setValue(id,value));
+      dampers=[];
+      const stockbridge=catalog.find((item)=>item.reference==="9305.07/G/1");
+      if(damped&&stockbridge){dampers.push({catalog:stockbridge,position:span-2.5,coef:0,subconductor:1},{catalog:stockbridge,position:span-2.5,coef:0,subconductor:2});}
+      $("family").value=subspan?"separador_DAMP_S2400":"amortiguador_MOSDORFER_9305";
+      $("recommendationRule").value="tr792"; $("supportType").value="suspension_rods"; $("supportTypeB").value="suspension_rods";
+      currentReference={mode:"tr792",span,scenario,data,title:`TR 792 · AAC JESSAMINE dúplex · ${span} m · ${subspan?"oscilación de subvano":damped?"con 9305.07/G/1":"sin Stockbridge"}`};
+      renderDampers(); filterCatalog(); syncSliderFromInput(); updateRecommendation();
+      const resultText=subspan?(span===265?"El informe no detecta oscilación de subvano.":"Máximo 78 mm horizontal y 49 mm vertical a aproximadamente 11,5 m/s; el fenómeno desaparece sobre 13 m/s."):(damped?`Movimiento máximo del Stockbridge: ${data.damperMotion.toFixed(2)} mm.`:"Curva comparativa sin el Stockbridge de extremo.");
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>AAC JESSAMINE 61×4,302 mm · Ø38,69 mm · 2,348 kg/m · EJ 2806,10 N·m² · haz dúplex horizontal 400 mm.<br><span class="hint">CBVCP-WN 6.1.1 · viento BUNDLE con 15 % de turbulencia · ${subspan?"23,8 kN a 15 °C":`${data.tension.toFixed(3)} kN a -5 °C`} · separador DAMP S.2.400.55.CCR · subvanos ${data.subspans.join(" + ")} m. ${resultText} Deformaciones expresadas 0-pico; límite aproximado 75 µstrain.</span>`;
+      clearResultsOnly(); setStatus("Caso TR 792 cargado. Pulse Calcular estudio para reproducir la figura del informe.","ok"); return;
+    }
+    if (key.startsWith("farellon-")) {
+      const [,id,scenario]=key.split("-"),data=FARELLON_CASES[id];
+      if(!data)throw new Error("Caso Farellón-Cerro Tigre no reconocido.");
+      const bare=scenario==="bare",span=bare?data.threshold:scenario==="short"?data.threshold:data.maxSpan;
+      Object.entries({span,diam:data.diameter,mass:data.mass,tension:data.tension,ei:data.ei,H:data.H,sdn:4.35,sdm:2.35,fmin:data.fmin,fmax:data.fmax,fstep:1,st:.2,limitEnd:150,windFactor:1}).forEach(([field,value])=>setValue(field,value));
+      dampers=[]; $("family").value="amortiguador_SD"; $("recommendationRule").value="farellon"; $("supportType").value="suspension_rods"; $("supportTypeB").value="tension";
+      currentReference={mode:"farellon",id,scenario,data,title:`CL28-1268 / ${data.code} · ${data.label} · ${bare?"sin amortiguadores":`vano ${span} m con ${data.model}`}`};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); if(!bare)applyRecommendation(); else renderDampers();
+      const range=id==="greeley"?"91-250 m / 251-378 m":id==="flint"?"91-225 m / 226-377 m":"90-250 m / 251-377 m";
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>LT 220 kV Farellón-Cerro Tigre · Ø${data.diameter.toFixed(2)} mm · ${data.mass.toFixed(3)} kg/m · EI ${data.ei.toFixed(2)} N·m² · tensión ${data.tension.toFixed(1)} kN · turbulencia de proyecto 7 %.<br><span class="hint">ATTRA V6.2.2 / EBP, factor de seguridad 1,5 en la disipación. Rangos ${range}. Modelo Arruti ${data.model}; primera unidad a ${data.first.toFixed(2)} m del eje de la grapa.${id==="opgw"?" El SD-0302-D27 se instala sobre la protección preformada del OPGW, por lo que su grapa no se selecciona usando únicamente el Ø12,2 mm del cable desnudo.":""} Límites: 150 µstrain en el conductor y 85 µstrain en la grapa del amortiguador. Las curvas son digitalizaciones de las gráficas del informe.</span>`;
+      clearResultsOnly(); setStatus(`Caso ${data.code} cargado. Pulse Calcular estudio para reproducir la gráfica ATTRA.`,"ok"); return;
+    }
+    if (key.startsWith("charrua-bundle-")) {
+      const span=Number(key.slice(15));
+      Object.entries({span,diam:24.45,mass:.9772,tension:15.71,ei:441.32,H:5174.46,sdn:3,sdm:2,fmin:8,fmax:60,fstep:.1,st:.2,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[]; $("family").value="SPA450CA"; $("recommendationRule").value="charrua_bundle"; $("supportType").value="suspension_rods"; $("supportTypeB").value="suspension_rods";
+      currentReference={mode:"charrua_bundle",scenario:span,title:`EA11-060311_v1 · ACAR 700 MCM cuádruple · vano ${span} m`};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); applyRecommendation();
+      const subspans=charruaBundleSubspans(span);
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>ACAR 700 MCM 30+7 · haz cuádruple · Ø24,45 mm · 0,9772 kg/m · EI 441,32 N·m² · tensión 15,71 kN · SPA450CA25.<br><span class="hint">Corrida BUNDLE/Variable-2, turbulencia 5 %, frecuencia 8-60 Hz y nube de 8 modos por resonancia. Subvanos documentados: ${subspans.join(" + ")} m. Las deformaciones en extremos y grapas del separador permanecen bajo 150 µstrain. La pauta desigual usa extremos de 32/36 m, subvano preferente 63 m y máximo 68 m.</span>`;
+      clearResultsOnly(); setStatus("Caso EA11-060311 cargado. Pulse Calcular estudio para reproducir la nube modal.","ok"); return;
+    }
+    if (key.startsWith("charrua-")) {
+      const [,id,...scenarioParts]=key.split("-"),scenario=scenarioParts.join("-"),data=CHARRUA_CASES[id];
+      if(!data)throw new Error("Caso Ancoa-Alto Jahuel no reconocido.");
+      const bare=scenario.startsWith("bare"),span=bare?data.threshold1:scenario==="short"?data.threshold1:scenario==="medium"?data.threshold2:960;
+      const support=scenario==="bare-tension"?"tension":"suspension_rods";
+      Object.entries({span,diam:data.diameter,mass:data.mass,tension:data.tension,ei:data.ei,H:data.H,sdn:4.35,sdm:2.35,fmin:data.fmin,fmax:data.fmax,fstep:1,st:.2,limitEnd:data.limit,windFactor:1}).forEach(([field,value])=>setValue(field,value));
+      dampers=[]; $("family").value="amortiguador_SAPREM_AMG"; $("recommendationRule").value="charrua"; $("supportType").value=support; $("supportTypeB").value=support;
+      currentReference={mode:"charrua",id,scenario,data,title:`${data.code} · ${data.label} · ${bare?"sin amortiguadores":`vano ${span} m con ${data.model}`}`};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); if(!bare)applyRecommendation(); else renderDampers();
+      const beaconText=data.beacons?" Para vanos con balizas, el informe exige conservar la pauta de extremos y disponer al menos un amortiguador en cada subvano entre balizas; sus posiciones requieren el plano real de balizamiento.":"";
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>LT 500 kV Ancoa-Alto Jahuel · Ø${data.diameter.toFixed(2)} mm · ${data.mass.toFixed(4)} kg/m · EI ${data.ei.toFixed(2)} N·m² · tensión ${data.tension.toFixed(2)} kN · turbulencia 7 % · límite ${data.limit} µstrain.<br><span class="hint">Modelo ${data.model}. Rangos: L≤${data.threshold1} m; ${data.threshold1}&lt;L≤${data.threshold2} m; ${data.threshold2}&lt;L≤960 m. ${data.preformed?"En cada amarre preformado se añade una unidad a 0,08 m del final de la retención.":"Los amarres se modelan con grapa directa."}${beaconText} Las curvas son digitalizaciones de TECNOSOFT III.</span>`;
+      clearResultsOnly(); setStatus(`Caso ${data.code} cargado. Pulse Calcular estudio para verificar la gráfica.`,"ok"); return;
+    }
+    if (key === "ec0016-cu") {
+      Object.entries({span:198.1,diam:9.34,mass:.4849,tension:1.432,ei:0,H:0,sdn:4.35,sdm:2.35,fmin:20,fmax:125,fstep:1,st:.2,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[]; $("family").value=""; $("recommendationRule").value="ec0016"; $("supportType").value="tension"; $("supportTypeB").value="tension";
+      currentReference={mode:"ec0016",title:"EC-90.0016 / EA19-032511 · Cu 1/0 AWG 7H · sin amortiguadores"};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); renderDampers();
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>L. Concepción - Cerro Chepe · vano máximo 198,1 m · vano mínimo 18,8 m · Cu 1/0 AWG, 7 hilos Ø3,1133 mm · Ø exterior 9,34 mm · 0,4849 kg/m · RTS 2.155 kg · terreno llano, viento laminar y turbulencia 7 %.<br><span class="hint">Caso conservador: tense inicial máximo 146 kg (1,432 kN) a 0 °C; el circuito 2 alcanza 126 kg. La curva permanece bajo 150 µstrain en todo el rango eólico, por lo que no se requiere amortiguamiento exterior. El informe no publica EI, autoamortiguamiento, modelo ni cotas del sistema opcional; la curva mostrada es una digitalización visual aproximada.</span>`;
+      clearResultsOnly(); setStatus("Caso EC-90.0016 / EA19-032511 cargado. Pulse Calcular estudio para verificar la condición sin amortiguadores.","ok"); return;
+    }
+    if (key.startsWith("lab-")) {
+      const scenario = key.slice(4);
+      const damped = scenario.startsWith("damped");
+      const support = scenario.endsWith("suspension") ? "suspension_rods" : "tension";
+      Object.entries({span:350,diam:17.24,mass:.489,tension:8.67,ei:107.69,H:damped?147338.92:147937.34,sdn:4.35,sdm:2.35,fmin:7,fmax:55,fstep:1,st:.2,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[]; $("family").value="amortiguador_SAPREM_AMG"; $("recommendationRule").value="lab"; $("supportType").value=support; $("supportTypeB").value=support;
+      currentReference={mode:"lab",scenario,title:`02042-13-L · ACAR 350 MCM · ${damped?"con AMG050920":"sin amortiguadores"} · ${support==="tension"?"amarre":"suspensión"}`};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); if(damped)applyRecommendation(); else renderDampers();
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>Nueva S/E Elevadora Laberinto FV - S/E Laberinto · vano de demostración 350 m · ACAR 350 MCM 12+7 · Ø17,24 mm · 0,489 kg/m · EI 107,69 N·m² · tensión 8,67 kN · turbulencia 7 %.<br><span class="hint">Control TECNOSOFT III: sin amortiguadores, máximo 320 µstrain en amarre y 210 µstrain en suspensión; límite 150 µstrain. Pauta para L ≤ 350 m: un AMG-050920 por extremo. Cota de amarre: 1,00 m desde la salida de la grapa de compresión. Cota de suspensión: 1,10 m desde el eje de la grapa, equivalente a 0,26 m después de las varillas VPAL de 1,68 m. Límite en la grapa del amortiguador: 75 µstrain.</span>`;
+      clearResultsOnly(); setStatus("Caso Laberinto 02042-13-L cargado. Pulse Calcular estudio para reproducir la gráfica.","ok"); return;
+    }
+    if(key.startsWith("lchc007-")){
+      const scenario=key.slice(8),data=LCHC007_CASES[scenario]; if(!data)throw new Error("Caso LCHC-ES-007 no reconocido.");
+      Object.entries({span:480,diam:24.45,mass:data.mass||.978,tension:data.tension,ei:441.31,H:data.H,sdn:4.35,sdm:2.35,fmin:5,fmax:data.fmax,fstep:1,st:.2,limitEnd:100,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[];$("family").value="separador_amortiguador_SALVI";$("recommendationRule").value="lchc007";$("supportType").value="suspension_rods";$("supportTypeB").value="suspension_rods";
+      currentReference={mode:"lchc007",scenario,data,title:`LCHC-500-E-ES-007 · ACAR 700 MCM cuádruple · ${data.label}`};
+      filterCatalog();syncSliderFromInput();updateRecommendation();applyRecommendation();
+      const allocation=lchcEs007Allocation[480];
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>ESANAM/CICFAS · vano 480 m · ACAR 700 MCM 30/7 · Ø24,45 mm · ${(data.mass||.978).toFixed(3)} kg/m · EI 441,31 N·m² · tensión ${data.tension.toFixed(3)} kN · haz cuádruple 400 mm.<br><span class="hint">Control: ${data.undamped} µstrain sin dispositivos y ${data.damped} µstrain con 8 separadores-amortiguadores 3931S4015A26F; límite 100 µstrain 0-pico. Subvanos exactos: ${allocation.subspans.join(" + ")} m. La oscilación de subvano queda completamente evitada${scenario==="ice"?" (no excitada)":" hasta 12,5 m/s"}. La imagen del catálogo es referencial para un separador cuádruple; el informe no incluye el plano del modelo SALVI.</span>`;
+      clearResultsOnly();setStatus("Caso LCHC-500-E-ES-007 cargado. Pulse Calcular estudio para comparar las curvas.","ok");return;
+    }
+    if (key.startsWith("lchc-")) {
+      const caseKey = key.slice(5);
+      const data = LCHC_CASES[caseKey];
+      if (!data) throw new Error("Caso LCHC no reconocido.");
+      const span = data.span || 480;
+      const damping = data.beacons ? 5e-7 : data.diameter === 12.8 ? 2.13e-5 : 1.46e-4;
+      Object.entries({span,diam:data.diameter,mass:data.mass,tension:data.tension,ei:data.ei,H:damping,sdn:4.35,sdm:2.35,fmin:10,fmax:160,fstep:1,st:.2,limitEnd:100,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[]; $("family").value="amortiguador_SALVI_4M"; $("recommendationRule").value="lchc"; $("supportType").value=data.support; $("supportTypeB").value=data.support;
+      currentReference={mode:"lchc",caseKey,data,title:`LCHC-500-E-ES-008 · OPGW Ø${data.diameter.toFixed(1)} · ${data.load} · ${data.beacons ? "con balizas" : data.support === "tension" ? "amarre" : "suspensión"}`};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); applyRecommendation();
+      const endpointText=data.support==="tension"?"dos unidades por extremo: 4M323AB0532 a 1,20 m y 4M233AB0723 a 1,80 m":"una 4M233AB0723 por extremo a 0,60 m de la AGS";
+      const beaconText=data.beacons?` Además, ${data.beacons} unidades 4M233AB0723, una a 0,60 m después de cada baliza de 5 kg y Ø610 mm, separadas 40 m.`:"";
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>ESANAM/EBP · vano ${span.toFixed(2)} m · Ø${data.diameter.toFixed(1)} mm · ${data.mass.toFixed(3)} kg/m · EI ${data.ei.toFixed(2)} N·m² · tensión ${data.tension.toFixed(3)} kN · terreno abierto sin turbulencia.<br><span class="hint">Control del informe: ${data.undamped} µstrain sin amortiguadores y ${data.damped} µstrain con el sistema, límite 100 µstrain 0-pico. Instalación: ${endpointText}.${beaconText} Curvas de potencia e impedancia mecánica no publicadas.</span>`;
+      clearResultsOnly(); setStatus("Caso LCHC-500-E-ES-008 cargado. Pulse Calcular estudio para comparar las curvas con y sin amortiguadores.","ok"); return;
+    }
+    if (key.startsWith("doc1058-")) {
+      const undamped=key.endsWith("undamped");
+      Object.entries({span:350,diam:23.55,mass:1.083,tension:24.59,ei:650,H:0,sdn:4.35,sdm:2.35,fmin:7,fmax:61,fstep:1,st:.2,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[]; $("family").value="amortiguador_PLP_VORTX"; $("recommendationRule").value="doc1058"; $("supportType").value="suspension_rods"; $("supportTypeB").value="suspension_rods";
+      currentReference={mode:"doc1058",scenario:undamped?"undamped":"damped",title:`DOC N.º 1058 PLP · ACCC Dove · ${undamped?"sin amortiguadores":"2 VSD-35 a 0,74 m"}`};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); if(!undamped) applyRecommendation(); else renderDampers();
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>ACCC-TW 362 (714 kcmil) Dove · Ø23,55 mm · 1,083 kg/m · RTS 122,3 kN · EDS 2.507 kgf (20 %) · AGS-AGS.<br><span class="hint">Control del software PLP/Dr. Diana: vano 350 m, 355 µstrain sin amortiguadores y 45 µstrain con dos VORTX VSD-35, uno por extremo a 0,74 m. Instalación sobre preformados; límite AGS 150 µstrain. El sufijo exacto de grapa debe confirmarse con el diámetro exterior de las varillas.</span>`;
+      clearResultsOnly(); setStatus("Caso DOC N.º 1058 PLP cargado. Pulse Calcular estudio para reproducir la gráfica.","ok"); return;
+    }
+    if (key.startsWith("dt2495-")) {
+      const type=key.slice(7);
+      const data={
+        acar:{span:588.3,diam:25.32,mass:1.0479,tension:14.956,ei:481,H:355911.69,fmin:7,fmax:70,title:"ACAR 750 MCM 18/19 · tramo 189-190",details:"sección 380 mm² · RBS 8.651 kg · E 5.892 kg/mm² · EDS 1.525 kg (17,63 % UTS)",note:"El vano equivalente máximo documentado para ACAR es 588,3 m. EI y H son valores preliminares escalados por similitud; deben reemplazarse por ensayos del conductor."},
+        flint:{span:743.9,diam:25.16,mass:1.035,tension:14.976,ei:496,H:355911.69,fmin:7,fmax:70,title:"AAAC FLINT · cruce río Achibueno E231-E232",details:"sección 375 mm² · RBS 11.023 kg · E 6.250 kg/mm² · EDS 1.527 kg (17,65 % UTS)",note:"Este es el vano especial de 743,9 m. EI y H se adoptan provisionalmente del caso FLINT comparable ya estudiado; no son resultados del DT2495."},
+        opgw:{span:743.9,diam:11.99,mass:.4717,tension:8.728,ei:73,H:10114.88,fmin:5,fmax:110,title:"OPGW 48 fibras · cruce río Achibueno E231-E232",details:"sección 86,39 mm² · RBS 7.297,84 kg · E 12.233,43 kg/mm² · EDS 890 kg (12,2 % UTS)",note:"EI y H son aproximaciones por similitud con el OPGW Ø12,8 mm existente. El proveedor debe entregar rigidez, autoamortiguamiento y respuesta del Stockbridge."}
+      }[type];
+      Object.entries({span:data.span,diam:data.diam,mass:data.mass,tension:data.tension,ei:data.ei,H:data.H,sdn:4.35,sdm:2.35,fmin:data.fmin,fmax:data.fmax,fstep:1,st:.2,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[]; $("family").value=""; $("recommendationRule").value="auto"; $("supportType").value="suspension_rods"; $("supportTypeB").value="suspension_rods";
+      currentReference={mode:"dt2495",type,title:`DT2495-DIJ211 · ${data.title}`,note:data.note};
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); renderDampers();
+      $("referenceInfo").innerHTML=`<strong>${currentReference.title}</strong><br>${data.details}.<br><span class="hint">Antecedente contractual: línea San Fabián-Ancoa 2×220 kV, 115 km, altitud ≤1.000 m, −5 a 35 °C, viento máximo 50 kg/m², densidad del aire 0,98. ${data.note} El documento exige armadura y Stockbridge, pero no define modelo, cantidad, ubicación ni curvas de potencia/fase.</span>`;
+      clearResultsOnly(); setStatus("Antecedente DT2495 cargado. El cálculo disponible es exploratorio EBP y no una validación del proveedor.","ok"); return;
+    }
+    if (key.startsWith("greeley-")) {
+      const scenario = key.slice(8);
+      const undamped = scenario.startsWith("undamped");
+      const beacons = scenario.endsWith("-beacons");
+      const span = undamped ? 350 : Number(scenario.replace("-beacons", ""));
+      const suspension = scenario.endsWith("suspension");
+      Object.entries({ span, diam: 28.15, mass: 1.295, tension: 30.33, ei: 777.66, H: 393835.5, sdn: 4.35, sdm: 2.35, fmin: 7, fmax: 65, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id,value]) => setValue(id,value));
+      dampers = []; $("family").value = "amortiguador_SAPREM_AMG"; $("recommendationRule").value = beacons ? "greeley_beacons" : "greeley";
+      $("supportType").value = suspension ? "suspension_rods" : "tension"; $("supportTypeB").value = $("supportType").value;
+      currentReference = { mode:"greeley", scenario:undamped ? (suspension ? "undamped_suspension" : "undamped_tension") : span, beacons, title:`EA13-050612 · AAAC GREELEY · ${undamped ? `sin amortiguadores / ${suspension ? "suspensión" : "amarre"}` : `vano ${span} m${beacons ? " con balizas" : ""}`}` };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); if (!undamped) applyRecommendation(); else renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>AAAC GREELEY 37/4,02 · Ø28,15 mm · 1,295 kg/m · EI 777,66 N·m² · tensión a -5 °C 30,33 kN.<br><span class="hint">Control TECNOSOFT III: sin amortiguadores, máximo 650 µstrain en amarre y 480 µstrain en suspensión. AMG152429 directo sobre conductor. Pauta de obra: 0,75 m desde salida de amarre o 1,36 m desde eje de suspensión; segunda unidad 0,60 m después. Límite 150 µstrain en extremos y 75 µstrain en la grapa del amortiguador. ${beacons ? "Con balizas: 2 unidades hasta 250 m y 4 unidades entre 250 y 500 m; el anexo no exige unidades adicionales junto a cada baliza." : "La distribución A/B reproduce literalmente la tabla de la página 6."}</span>`;
+      clearResultsOnly(); setStatus("Caso EA13-050612 cargado. Pulse Calcular estudio para reproducir la gráfica.","ok"); return;
+    }
+    if (key.startsWith("acar1000-")) {
+      const scenario = key.slice(9);
+      const undamped = scenario === "undamped";
+      const span = undamped ? 400 : Number(scenario.replace("-rods",""));
+      const rods = scenario.endsWith("-rods");
+      const tension = span <= 118 ? 43.35 : span > 550 ? 18.08 : 23.3;
+      const H = span <= 118 ? 364997.9 : span > 550 ? 565178.68 : 497859.76;
+      Object.entries({ span, diam: 29.23, mass: 1.397, tension, ei: 908.15, H, sdn: 4.35, sdm: 2.35, fmin: 6, fmax: 60, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id,value]) => setValue(id,value));
+      dampers = []; $("family").value = "amortiguador_SAPREM_AMG"; $("recommendationRule").value = "acar1000";
+      $("supportType").value = span <= 118 ? "tension" : rods ? "suspension_rods" : "suspension"; $("supportTypeB").value = $("supportType").value;
+      currentReference = { mode:"acar1000", scenario:undamped ? "undamped" : span, title:`EA15-121816 Rev.1 · ACAR 1000 MCM dúplex · ${undamped ? "vano 400 m sin Stockbridge" : `vano ${span} m${rods ? " con varillas" : ""}`}` };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); if (!undamped) applyRecommendation(); else renderDampers();
+      const subspans = acar500Subspans(span).join(" / ");
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>ACAR 1000 MCM (33+4) · Ø29,23 mm · 1,397 kg/m · EI 908,15 N·m² · haz dúplex 450 mm.<br><span class="hint">Control TECNOSOFT: vano 400 m sin Stockbridge, banda peligrosa 6–21 Hz y máximo declarado 485 µstrain. Sistema SPA450DA30 + AMG152429. Subvanos para L=${span} m: ${subspans} m.</span>`;
+      clearResultsOnly(); setStatus("Caso EA15-121816 Rev.1 cargado. Pulse Calcular estudio.","ok"); return;
+    }
+    if (key.startsWith("ea15opgw-")) {
+      const scenario = key.slice(9);
+      const beacons = scenario === "500-beacons";
+      const undamped = scenario === "undamped";
+      const span = undamped ? 250 : beacons ? 500 : Number(scenario);
+      Object.entries({ span, diam: 20.6, mass: 0.822, tension: 12.88, ei: 247.55, H: 77024.91, sdn: 4.35, sdm: 2.35, fmin: 9, fmax: 125, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = beacons ? "ea15opgw_beacons" : "ea15opgw";
+      $("supportType").value = "suspension_rods"; $("supportTypeB").value = "suspension_rods";
+      currentReference = { mode: "ea15opgw", scenario: undamped ? "undamped" : span, beacons, title: `EA15-121818 Rev.1 · OPGW ZTT Ø20,6 · ${undamped ? "sin amortiguadores" : `vano ${span} m${beacons ? " con balizas" : ""}`}` };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation();
+      if (!undamped) applyRecommendation(); else renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>OPGW-32G652-AST-248[101.5;514.5]-ZTT · Ø20,6 mm · 0,822 kg/m · EI 247,55 N·m² · tensión inicial 12,88 kN.<br><span class="hint">Control TECNOSOFT: sin amortiguadores, 215 µstrain a 9 Hz, máximo 410 µstrain a 20 Hz y condición peligrosa hasta 38 Hz. Modelo AMG091534 sobre varillas VPAW FO 21/I/800. ${beacons ? "La pauta mantiene los amortiguadores de extremo y exige además uno junto a cada baliza para proteger cada subvano." : "Seleccione los apoyos A/B para reproducir todas las combinaciones de la tabla."}</span>`;
+      clearResultsOnly(); setStatus("Caso EA15-121818 Rev.1 cargado. Pulse Calcular estudio.", "ok"); return;
+    }
+    if (key.startsWith("acar500-")) {
+      const scenario = key.slice(8);
+      const span = scenario === "undamped" ? 400 : scenario === "170" ? 170 : 450;
+      const rods = scenario === "450-rods";
+      const tension = span <= 170 ? 26.33 : 16.22;
+      Object.entries({ span, diam: 20.66, mass: 0.695, tension, ei: 225.59, H: 211840.83, sdn: 4.35, sdm: 2.35, fmin: 9, fmax: 125, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = "acar500";
+      $("supportType").value = scenario === "170" ? "tension" : rods ? "suspension_rods" : "suspension";
+      $("supportTypeB").value = $("supportType").value;
+      currentReference = { mode: "acar500", scenario, title: `EA16-111644 (pie EA16-111611) · ACAR 500 MCM dúplex · ${scenario === "undamped" ? "vano 400 m sin Stockbridge" : scenario === "170" ? "vano 170 m con AMG091526" : `vano 450 m, suspensión ${rods ? "con" : "sin"} varillas`}` };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation();
+      if (scenario !== "undamped") applyRecommendation(); else renderDampers();
+      const subspans = acar500Subspans(span).join(" / ");
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>ACAR 500 MCM (18+19) · Ø 20,66 mm · 0,695 kg/m · EI 225,59 N·m² · haz dúplex 450 mm.<br><span class="hint">Control TECNOSOFT: vano 400 m sin Stockbridge, banda peligrosa 9–32 Hz y máximo ≈450 µstrain. Con AMG091526, los casos de 170 y 450 m quedan bajo 150 µstrain. Separador-amortiguador SPA450DA21; subvanos para L=${span} m: ${subspans} m. El archivo se denomina EA16-111644, pero el código impreso en sus 24 páginas es EA16-111611.</span>`;
+      clearResultsOnly();
+      setStatus("Caso ACAR 500 MCM cargado. Pulse Calcular estudio para reproducir la gráfica.", "ok");
+      return;
+    }
+    if (key === "ec0011-flint") {
+      Object.entries({ span: 71.59, diam: 25.13, mass: 1.028, tension: 19.5, ei: 494.12, H: 355911.69, sdn: 4.35, sdm: 2.35, fmin: 7, fmax: 60, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = []; $("family").value = "amortiguador_FR3"; $("recommendationRule").value = "flint"; $("supportType").value = "suspension"; $("supportTypeB").value = "suspension";
+      currentReference = { mode: "flint", scenario: "ec0011", title: "EC-90.0011 Rev.0 · Los Cóndores · AAAC FLINT 71,59 m", clamp: 81, damper: 36 };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); applyRecommendation(); renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>Conductor FLINT Ø 25,13 mm · EDS 19,5 kN · 2 FR-3, uno por extremo, a 1,43 m sin varillas.<br><span class="hint">La curva de diseño para vano máximo 350 m verifica 81 µstrain en extremos y 36 µstrain en la grapa del amortiguador. La tabla del proyecto asigna 2 unidades al vano Los Cóndores #1.</span>`;
+      clearResultsOnly(); setStatus("Caso Los Cóndores FLINT cargado. Pulse Calcular estudio.", "ok"); return;
+    }
+    if (key === "ec0011-opgw") {
+      Object.entries({ span: 72.03, diam: 12.8, mass: 0.433, tension: 8.1, ei: 91.78, H: 10114.88, sdn: 4.35, sdm: 2.35, fmin: 5, fmax: 110, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = []; $("family").value = "amortiguador_4D"; $("recommendationRule").value = "opgw128"; $("supportType").value = "suspension_rods"; $("supportTypeB").value = "suspension_rods";
+      currentReference = { mode: "opgw128", scenario: "ec0011", title: "EC-90.0011 Rev.0 · Los Cóndores · OPGW 72,03 m" };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation(); applyRecommendation(); renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>OPGW Ø 12,8 mm · EDS 8,1 kN · 2 4D-20 a 0,82 m de cada extremo.<br><span class="hint">La tabla asigna 2 amortiguadores y 0 varillas adicionales al vano Los Cóndores #2. La corrida TECNOSOFT de referencia modela 11 AGS y verifica 99 µstrain en extremos y 57 µstrain en grapas del amortiguador.</span>`;
+      clearResultsOnly(); setStatus("Caso Los Cóndores OPGW cargado. Pulse Calcular estudio.", "ok"); return;
+    }
+    if (key.startsWith("opgw128-")) {
+      const scenario = key.slice(8);
+      const rev0Schedule = scenario === "schedule-rev0";
+      const abSchedule = scenario === "schedule";
+      const span = rev0Schedule ? 280 : abSchedule ? 210.19 : scenario === "undamped" ? 250 : Number(scenario);
+      Object.entries({ span, diam: 12.8, mass: 0.433, tension: 8.1, ei: 91.78, H: 10114.88, sdn: 4.35, sdm: 2.35, fmin: 5, fmax: 110, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_4D";
+      $("recommendationRule").value = "opgw128";
+      $("supportType").value = "suspension_rods";
+      $("supportTypeB").value = "suspension_rods";
+      currentReference = { mode: "opgw128", scenario, title: `EC-90.0013 ${rev0Schedule ? "Rev.0" : abSchedule ? "AB" : "Rev.0/AB"} · OPGW 12,8 · ${scenario === "undamped" ? "sin amortiguadores" : rev0Schedule ? "programa real de 11 vanos" : abSchedule ? "programa real de 5 vanos" : `vano ${span} m`}` };
+      filterCatalog(); syncSliderFromInput(); updateRecommendation();
+      if (scenario !== "undamped") applyRecommendation(); else renderDampers();
+      const scheduleRows = rev0Schedule ? OPGW128_REV0_SCHEDULE : abSchedule ? OPGW128_SCHEDULE.map(([number, description, length]) => [number, description, length, 2, 0]) : null;
+      const scheduleSelector = scheduleRows ? `<br><label for="opgw128SpanSchedule">Vano del Anexo D</label><select id="opgw128SpanSchedule">${scheduleRows.map(([number, description, length, quantity, rods]) => `<option value="${length}"${length === span ? " selected" : ""}>${number}. ${description} - ${length.toFixed(2)} m - ${quantity} 4D-20${rods ? ` - ${rods} varillas` : ""}</option>`).join("")}</select>` : "";
+      const allocationText = rev0Schedule ? "La Rev.0 contiene 11 vanos, 24 amortiguadores y 2 juegos de varillas por OPGW." : "La revisión AB contiene 5 vanos y 10 amortiguadores por OPGW.";
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>OPGW-24G652-AST-96[49.7;81.1] · Ø 12,8 mm · 0,433 kg/m · EI 91,78 N·m² · EDS 8,1 kN · límite 150 µstrain.<br><span class="hint">Control TECNOSOFT: 418 µstrain sin amortiguadores; vano 250 m con 2 4D-20: 99 µstrain en extremos y 57 µstrain en grapas; vano 500 m con 4 unidades: 63/76 µstrain. Primera unidad a 0,82 m y siguientes separadas 0,58 m. ${allocationText}</span>${scheduleSelector}`;
+      if (scheduleRows) $("opgw128SpanSchedule").addEventListener("change", (event) => { setValue("span", event.target.value); syncSliderFromInput(); updateRecommendation(); applyRecommendation(); clearResultsOnly(); setStatus(`Vano OPGW ${Number(event.target.value).toFixed(2)} m cargado desde el Anexo D ${rev0Schedule ? "Rev.0" : "AB"}. Pulse Calcular estudio.`, "ok"); });
+      clearResultsOnly();
+      setStatus("Caso OPGW EC-90.0013 AB cargado. Pulse Calcular estudio para reproducir la gráfica.", "ok");
+      return;
+    }
+    if (key.startsWith("monteaguila13-")) {
+      const scenario = key.slice(14);
+      Object.entries({ span: 207.3, diam: 13.4, mass: 0.536, tension: 15.42, ei: 215.53, H: 14088.06, sdn: 4.35, sdm: 2.35, fmin: 14, fmax: 125, fstep: 1, st: 0.2, limitEnd: 225, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = "monteaguila13";
+      $("supportType").value = "tension";
+      $("supportTypeB").value = "tension";
+      currentReference = { mode: "monteaguila13", scenario, title: `EA26-071314 · OPGW ZTT Ø13,4 · ${scenario === "undamped" ? "sin amortiguadores" : "vano 207,3 m con pauta"}` };
+      filterCatalog();
+      syncSliderFromInput();
+      updateRecommendation();
+      if (scenario === "207.3") applyRecommendation();
+      else renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>OPGW-24G652-ALT-98[79.4:68.0] · Ø 13,4 mm · 0,536 kg/m · EI 215,53 N·m² · tensión inicial 15,42 kN · límite 225 µstrain.<br><span class="hint">Control TECNOSOFT: 263 µstrain a 14 Hz y máximo 841 µstrain a 40 Hz. Para L=207,3 m: dos AMG-050926 por extremo, a 0,08 y 0,53 m desde el final de cada retención. La corrida de la página 7 redondea el vano a 210 m y representa una unidad efectiva a 0,450 m por extremo. El vano 30,3 m destensado a 3,08 kN no requiere amortiguamiento, aunque el plano permite instalar dos unidades en A si la ingeniería lo decide.</span>`;
+      clearResultsOnly();
+      setStatus("Caso EA26-071314 cargado. Pulse Calcular estudio para reproducir y verificar la gráfica.", "ok");
+      return;
+    }
+    if (key.startsWith("monteaguila-")) {
+      const scenario = key.slice(12);
+      Object.entries({ span: 112, diam: 16.4, mass: 0.740, tension: 20.91, ei: 293.96, H: 29427.15, sdn: 4.35, sdm: 2.35, fmin: 12, fmax: 125, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = "monteaguila";
+      $("supportType").value = "tension";
+      $("supportTypeB").value = "tension";
+      currentReference = { mode: "monteaguila", scenario, title: `EA26-071313 · OPGW DNO-150172 · ${scenario === "undamped" ? "sin amortiguadores" : "vano 112 m con pauta"}` };
+      filterCatalog();
+      syncSliderFromInput();
+      updateRecommendation();
+      if (scenario === "112") applyRecommendation();
+      else renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>OPGW Ø 16,4 mm · 0,740 kg/m · EI 293,96 N·m² · tensión inicial 20,91 kN · límite 150 µstrain.<br><span class="hint">Control TECNOSOFT: 306 µstrain a 12 Hz, máximo 1055 µstrain a 39 Hz y condición peligrosa hasta 118 Hz. Pauta de obra: dos AMG-091526 en un extremo de amarre, a 0,08 m del final de la retención y 0,60 m entre ejes (posiciones 0,08 y 0,68 m). La simulación de la página 7 representa una unidad efectiva a 0,600 m.</span>`;
+      clearResultsOnly();
+      setStatus("Caso EA26-071313 cargado. Pulse Calcular estudio para reproducir y verificar la gráfica.", "ok");
+      return;
+    }
+    if (key === "ea26-071312") {
+      Object.entries({ span: 35, diam: 9.78, mass: 0.390, tension: 0.62, ei: 62.82, H: 76782.12, sdn: 4.35, sdm: 2.35, fmin: 20, fmax: 120, fstep: 1, st: 0.2, limitEnd: 225, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = "alumoweld";
+      $("supportType").value = "tension";
+      $("supportTypeB").value = "tension";
+      currentReference = { mode: "alumoweld", scenario: "bare", title: "EA26-071312 · Alumoweld 7N°8 · sin amortiguadores" };
+      filterCatalog();
+      syncSliderFromInput();
+      updateRecommendation();
+      renderDampers();
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>7 hilos de Ø 3,26 mm · Ø exterior 9,78 mm · 0,390 kg/m · EI 62,82 N·m² · tensión inicial 0,62 kN.<br><span class="hint">El informe concluye que no necesita amortiguamiento exterior: la deformación permanece bajo 150 µstrain y, por tanto, bajo el límite aplicable de 225 µstrain. Como protección opcional permite un AMG-030513 en B a 0,95 m.</span>`;
+      clearResultsOnly();
+      setStatus("Caso EA26-071312 cargado. Pulse Calcular estudio para reproducir la gráfica sin amortiguadores.", "ok");
+      return;
+    }
+    if (key.startsWith("ea26-")) {
+      const scenario = key.slice(5);
+      Object.entries({ span: 215, diam: 34.63, mass: 1.9465, tension: 38.69, ei: 2097.36, H: 598697.83, sdn: 4.35, sdm: 2.35, fmin: scenario === "no-stockbridge" ? 5 : 6, fmax: 60, fstep: 0.1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = "ea26";
+      $("supportType").value = "tension";
+      $("supportTypeB").value = "tension";
+      currentReference = { mode: "ea26", scenario, title: `EA26-071311 · haz dúplex · ${scenario === "no-stockbridge" ? "sin Stockbridge" : "sistema completo"}` };
+      filterCatalog();
+      syncSliderFromInput();
+      updateRecommendation();
+      if (scenario === "215") applyRecommendation();
+      else {
+        const rec = makeRecommendation();
+        const spacer = catalog.find((x) => x.reference === "SPA400DA35");
+        if (spacer && rec.spacerPositions) dampers = rec.spacerPositions.map((position) => ({ catalog: spacer, position, coef: 0 }));
+        renderDampers();
+      }
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>AAAC 1400 MCM dúplex 400 mm · Ø 34,63 mm · 1,9465 kg/m · EI 2097,36 N·m² · tensión 38,69 kN.<br><span class="hint">Sistema: SPA400DA35 + AMG-152440. TECNOSOFT BUNDLE genera cuatro modos por frecuencia y una nube de puntos. Caso validado: amarre, L ≤ 215 m, un AMG por extremo y por subconductor.</span>`;
+      clearResultsOnly();
+      setStatus("Caso EA26 cargado. Pulse Calcular estudio para reproducir la nube modal del informe.", "ok");
+      return;
+    }
+    if (key.startsWith("flint-")) {
+      const scenario = key.slice(6);
+      const presetSpan = scenario === "schedule" ? 339.85 : 350;
+      Object.entries({ span: presetSpan, diam: 25.13, mass: 1.028, tension: 19.5, ei: 494.12, H: 355911.69, sdn: 4.35, sdm: 2.35, fmin: 7, fmax: 60, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_FR3";
+      $("recommendationRule").value = "flint";
+      $("supportType").value = "suspension";
+      $("supportTypeB").value = "suspension";
+      filterCatalog();
+      syncSliderFromInput();
+      updateRecommendation();
+      if (scenario !== "undamped") applyRecommendation();
+      else renderDampers();
+      const scenarioTitle = scenario === "undamped" ? "sin amortiguadores" : scenario === "schedule" ? "programa de 35 vanos" : "vano 350 m con 2 FR-3";
+      currentReference = { mode: "flint", scenario, title: `EC-90.0014 Rev.0 · AAAC FLINT · ${scenarioTitle}`, clamp: scenario === "undamped" ? 451 : 81, damper: scenario === "undamped" ? null : 36 };
+      const scheduleSelector = scenario === "schedule" ? `<br><label for="flintTowerSpan">Vano del Anexo C</label><select id="flintTowerSpan">${FLINT_TOWER_SCHEDULE.map(([number, description, length]) => `<option value="${length}"${length === presetSpan ? " selected" : ""}>${number}. ${description} - ${length.toFixed(2)} m - 2 FR-3</option>`).join("")}</select>` : "";
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>AAAC FLINT 37/3,59 · Ø 25,13 mm · 1,028 kg/m · EI 494,12 N·m² · EDS 19,5 kN · turbulencia 5 %.<br><span class="hint">Control TECNOSOFT: máximo sin amortiguadores 451 µstrain; con 2 FR-3, 81 µstrain en grapas y 36 µstrain en la grapa del amortiguador. Instalación a 1,43 m sin varillas o 1,57 m con varillas. El Anexo C contiene 35 vanos y 70 amortiguadores por conductor.</span>${scheduleSelector}`;
+      if (scenario === "schedule") {
+        $("flintTowerSpan").addEventListener("change", (event) => {
+          setValue("span", event.target.value);
+          syncSliderFromInput();
+          updateRecommendation();
+          applyRecommendation();
+          clearResultsOnly();
+          setStatus(`Vano ${Number(event.target.value).toFixed(2)} m cargado desde el Anexo C. Pulse Calcular estudio.`, "ok");
+        });
+      }
+      clearResultsOnly();
+      setStatus("Caso AAAC FLINT cargado. Pulse Calcular estudio para reproducir y verificar la gráfica.", "ok");
+      return;
+    }
+    if (key.startsWith("ea16-")) {
+      const scenario = key.slice(5);
+      const spans = { undamped: 450, 350: 350, 700: 700, 1000: 1000 };
+      const span = spans[scenario];
+      const tension = scenario === "1000" ? 15.98 : 20.14;
+      Object.entries({ span, diam: 14.3, mass: 0.599, tension, ei: 278.48, H: 21261.69, sdn: 4.35, sdm: 2.35, fmin: 13, fmax: 110, fstep: 1, st: 0.2, limitEnd: 225, windFactor: 1 }).forEach(([id, value]) => setValue(id, value));
+      dampers = [];
+      $("family").value = "amortiguador_SAPREM_AMG";
+      $("recommendationRule").value = "ea16";
+      $("supportType").value = "suspension";
+      $("supportTypeB").value = "suspension";
+      filterCatalog();
+      syncSliderFromInput();
+      updateRecommendation();
+      if (scenario !== "undamped") applyRecommendation();
+      else renderDampers();
+      currentReference = { mode: "ea16", scenario, title: `EA16-042811 · ${scenario === "undamped" ? "sin amortiguadores" : `vano ${span} m`}`, clamp: scenario === "undamped" ? 1064 : Math.max(...EA16_CURVES[scenario].end.map((p) => p[1])), damper: scenario === "undamped" ? null : Math.max(...EA16_CURVES[scenario].damper.map((p) => p[1])), damperLimit: 112 };
+      $("referenceInfo").innerHTML = `<strong>${currentReference.title}</strong><br>OPGW Ø 14,3 mm · 0,599 kg/m · EI 278,48 N·m² · tensión ${tension.toFixed(2)} kN · AMG-091526 sobre varillas.<br><span class="hint">Curvas digitalizadas de las páginas 7-10 del informe. A 13 Hz: 285 µstrain sin amortiguadores; máximo 1064 µstrain a 51-53 Hz. La grapa G-26 es compatible con el diámetro exterior efectivo de las varillas.</span>`;
+      clearResultsOnly();
+      setStatus("Caso EA16 cargado. Pulse Calcular estudio para reproducir la gráfica de referencia.", "ok");
+      return;
+    }
+    const common = { diam: 19.88, mass: 0.650, tension: 14.15, ei: 190.73, H: 199642.68, sdn: 4.35, sdm: 2.35, fmin: 9, fmax: 70, fstep: 1, st: 0.2, limitEnd: 150, windFactor: 1 };
+    const definitions = {
+      "cairo-undamped": { span: 300, positions: [], title: "AAAC Cairo sin amortiguadores", reference: "TECNOSOFT: deformación máxima en grapa = 448 µstrain (0-pico)." },
+      "cairo-300": { span: 300, positions: [1.3, 298.7], title: "AAAC Cairo, vano 300 m, 2 FR-2", reference: "TECNOSOFT: máximo global informado = 90 µstrain en grapa y 35 µstrain en grapa de amortiguador." },
+      "cairo-550": { span: 550, positions: [1.3, 2.5, 547.5, 548.7], title: "AAAC Cairo, vano 550 m, 4 FR-2", reference: "TECNOSOFT: sistema dentro del límite de 150 µstrain; tabla resumen: 90 µstrain en grapa y 35 µstrain en grapa de amortiguador." },
+      "cairo-schedule": { span: 350.7, positions: [1.3, 2.5, 348.2, 349.4], title: "AAAC Cairo, programa real de 42 registros", reference: "Anexo F: 42 registros de vano, con asignación de 0, 2 o 4 amortiguadores FR-2." }
+    };
+    const definition = definitions[key];
+    Object.entries({ ...common, span: definition.span }).forEach(([id, value]) => setValue(id, value));
+    dampers = [];
+    const fr2 = catalog.find((x) => x.reference === "FR-2");
+    if (fr2) definition.positions.forEach((position) => dampers.push({ catalog: fr2, position, coef: 0 }));
+    renderDampers();
+    $("family").value = "amortiguador_FR";
+    $("recommendationRule").value = "cairo";
+    $("supportType").value = "suspension";
+    $("supportTypeB").value = "suspension";
+    filterCatalog();
+    syncSliderFromInput();
+    updateRecommendation();
+    const scheduleSelector = key === "cairo-schedule" ? `<br><label for="cairoSpanSchedule">Vano del Anexo F</label><select id="cairoSpanSchedule">${CAIRO_SCHEDULE.map(([corridor,from,to,length,quantity], index) => `<option value="${index}"${length === definition.span && index === 15 ? " selected" : ""}>${index + 1}. ${corridor} · ${from}-${to} · ${length.toFixed(1)} m · ${quantity} FR-2</option>`).join("")}</select>` : "";
+    currentReference = { mode: "cairo", scenario: key.slice(6), title: definition.title, text: definition.reference, clamp: key === "cairo-undamped" ? 448 : 90, damper: key === "cairo-undamped" ? null : 35 };
+    $("referenceInfo").innerHTML = `<strong>${definition.title}</strong><br>${definition.reference}<br><span class="hint">AAAC Cairo: Ø19,88 mm, 0,6502 kg/m, EDS 14,15 kN, EI 190,73 N·m², turbulencia 2 %, viento SINGLE/Variable-2, factor de seguridad 1,5 y amplitudes 0-pico. Pauta: L&lt;100 m = 0; 100≤L≤350 m = 2; 350&lt;L≤700 m = 4. Primera unidad a 1,30 m en suspensión o 1,20 m en amarre; separación adicional 1,20 m.</span>${scheduleSelector}`;
+    if (key === "cairo-schedule") {
+      $("cairoSpanSchedule").addEventListener("change", (event) => {
+        const [corridor, from, to, length, quantity] = CAIRO_SCHEDULE[Number(event.target.value)];
+        setValue("span", length); syncSliderFromInput(); updateRecommendation(); applyRecommendation(); clearResultsOnly();
+        setStatus(`${corridor} ${from}-${to}: vano ${length.toFixed(1)} m, asignación contractual ${quantity} FR-2. Pulse Calcular estudio.`, "ok");
+      });
+    }
+    clearResultsOnly();
+    setStatus("Ejemplo DOC 109475 / AAAC Cairo cargado. Pulse Calcular estudio para reproducir la gráfica.", "ok");
+  }
+
+  function selectedRecommendationRule() {
+    const selected = $("recommendationRule").value;
+    if (selected !== "auto") return selected;
+    if (currentReference?.mode === "doc1058") return "doc1058";
+    if (currentReference?.mode === "lchc") return "lchc";
+    if (currentReference?.mode === "lchc007") return "lchc007";
+    if (currentReference?.mode === "lab") return "lab";
+    if (currentReference?.mode === "ec0016") return "ec0016";
+    if (currentReference?.mode === "charrua") return "charrua";
+    if (currentReference?.mode === "charrua_bundle") return "charrua_bundle";
+    if (currentReference?.mode === "tr792") return "tr792";
+    if (currentReference?.mode === "farellon") return "farellon";
+    if (currentReference?.mode === "dt2495") return null;
+    const family = $("family").value;
+    if (currentReference?.mode === "alumoweld") return "alumoweld";
+    if (currentReference?.mode === "greeley") return currentReference.beacons ? "greeley_beacons" : "greeley";
+    if (currentReference?.mode === "acar1000") return "acar1000";
+    if (currentReference?.mode === "ea15opgw") return currentReference.beacons ? "ea15opgw_beacons" : "ea15opgw";
+    if (currentReference?.mode === "acar500") return "acar500";
+    if (currentReference?.mode === "ea26") return "ea26";
+    if (currentReference?.mode === "opgw128") return "opgw128";
+    if (currentReference?.mode === "monteaguila13") return "monteaguila13";
+    if (currentReference?.mode === "monteaguila") return "monteaguila";
+    if (family === "amortiguador_FR3" || currentReference?.mode === "flint") return "flint";
+    if (family === "amortiguador_SAPREM_AMG" && currentReference?.mode === "ea16") return "ea16";
+    if (family === "amortiguador_FR" || currentReference?.title?.includes("Cairo")) return "cairo";
+    if (family === "amortiguador_4D" || currentReference?.title?.includes("OPGW")) return "opgw";
+    return null;
+  }
+
+  function ea26Subspans(span) {
+    const L = Math.round(span);
+    if (L < 29) return [];
+    if (L <= 68) {
+      const first = Math.round(12 + (L - 29) * 20 / 39);
+      return [first, L - first];
+    }
+    if (L <= 136) {
+      const first = Math.round(24 + (L - 69) * 8 / 67);
+      const last = Math.round(25 + (L - 69) * 11 / 67);
+      return [first, L - first - last, last];
+    }
+    if (L <= 199) {
+      const remaining = L - 68;
+      const middle1 = Math.round(remaining * 0.48);
+      return [32, middle1, remaining - middle1, 36];
+    }
+    const remaining = L - 68;
+    const weights = [51, 45, 51];
+    const a = Math.round(remaining * weights[0] / 147);
+    const b = Math.round(remaining * weights[1] / 147);
+    return [32, a, b, remaining - a - b, 36];
+  }
+
+  function acar500Subspans(span) {
+    const L = Math.round(span);
+    if (L < 29 || L > 712) return [];
+    if (L === 118) return [32,50,36];
+    if (L === 170) return [32,49,53,36];
+    if (L === 300) return [32,56,61,55,60,36];
+    if (L === 400) return [32,53,58,52,58,52,59,36];
+    if (L === 450) return [32,61,67,60,66,61,67,36];
+    if (L === 550) return [32,59,63,57,63,56,64,58,62,36];
+    if (L === 630) return [32,66,60,64,59,66,57,64,60,66,36];
+    if (L <= 68) {
+      const first = Math.round(L * 0.47);
+      return [first, L - first];
+    }
+    const spacerCount = Math.ceil((L - 68) / 64) + 1;
+    const interiorCount = spacerCount - 1;
+    const remaining = L - 68;
+    const pattern = [58,63,68];
+    const weights = Array.from({ length: interiorCount }, (_, i) => pattern[i % pattern.length]);
+    const sum = weights.reduce((a, b) => a + b, 0);
+    const interior = weights.map((w) => Math.round(remaining * w / sum));
+    interior[interior.length - 1] += remaining - interior.reduce((a, b) => a + b, 0);
+    return [32, ...interior, 36];
+  }
+
+  function charruaBundleSubspans(span) {
+    const L=Math.round(span);
+    if(L===450)return[32,61,67,60,66,61,67,36];
+    if(L===958)return[32,62,67,60,66,59,65,61,66,62,67,61,66,61,67,36];
+    if(L<70||L>958)return[];
+    const remaining=L-68,interiorCount=Math.max(1,Math.ceil(remaining/68)),base=Math.floor(remaining/interiorCount),extra=remaining-base*interiorCount;
+    const interior=Array.from({length:interiorCount},(_,i)=>base+(i<extra?1:0));
+    return[32,...interior,36];
+  }
+
+  function makeRecommendation() {
+    const rule = selectedRecommendationRule();
+    const span = number("span");
+    const diameter = number("diam");
+    const support = $("supportType").value;
+    const supportB = $("supportTypeB").value;
+    if (!Number.isFinite(span) || span <= 0) return { valid: false, message: "Introduzca un vano válido." };
+    let total = 0, first = 0, spacing = 0, model = "", range = "", family = "";
+    if (rule === "tr792") {
+      if(Math.abs(diameter-38.69)>.1)return{valid:false,message:`La pauta TR 792 corresponde al AAC JESSAMINE Ø38,69 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      if(![265,431].includes(Math.round(span)))return{valid:false,message:"El informe TR 792 verifica específicamente los vanos de 265 m y 431 m."};
+      const data=TR792_CASES[Math.round(span)],rightDistances=[2.5,2.5],positions=rightDistances.map((distance)=>Number((span-distance).toFixed(3)));
+      return{valid:true,rule,span,total:2,model:"9305.07/G/1",family:"amortiguador_MOSDORFER_9305",range:`Vano ${Math.round(span)} m · haz dúplex`,positions,leftDistances:[],rightDistances,support,supportB,installationNote:`Una unidad 9305.07/G/1 por subconductor, solamente en el extremo derecho, a 2,50 m desde el centro de la grapa o desde el final del amarre hasta el centro de la grapa del amortiguador. Separadores S.2.400.55.CCR según ${data.subspans.join(" + ")} m; el informe declara ${data.spacerCount} separadores en la tabla de oscilación de subvano.`};
+    } else if (rule === "farellon") {
+      const data=currentReference?.data;
+      if(!data)return{valid:false,message:"Cargue el estudio CL28-1268 de AAAC Greeley o AAAC Flint."};
+      if(Math.abs(diameter-data.diameter)>.5)return{valid:false,message:`La pauta ${data.code} corresponde a ${data.label} Ø${data.diameter.toFixed(2)} mm; D actual = ${diameter.toFixed(2)} mm.`};
+      const minSpan=data.minSpan||91;if(span<minSpan||span>data.maxSpan)return{valid:false,message:`El estudio ${data.code} documenta vanos entre ${minSpan} y ${data.maxSpan} m.`};
+      if(number("tension")>data.tension+.02)return{valid:false,message:`El tense introducido supera el máximo estudiado de ${data.tension.toFixed(1)} kN.`};
+      const short=span<=data.threshold,leftDistances=[data.first],rightDistances=short?[]:[data.first];
+      const positions=[...leftDistances,...rightDistances.map(x=>Number((span-x).toFixed(3)))].sort((a,b)=>a-b);
+      return{valid:true,rule,span,total:positions.length,model:data.model,family:"amortiguador_SD",range:short?`${minSpan} ≤ L ≤ ${data.threshold} m`:`${data.threshold} < L ≤ ${data.maxSpan} m`,positions,leftDistances,rightDistances,support,supportB,installationNote:`L1 = ${Math.round(data.first*1000)} mm desde el eje de la grapa al eje del amortiguador. Para el rango corto se instala una unidad junto a la torre A; para el rango largo, una por extremo. Tolerancia de montaje ±2 %.`};
+    } else if (rule === "charrua_bundle") {
+      if(Math.abs(diameter-24.45)>.5)return{valid:false,message:`La pauta EA11-060311 corresponde al ACAR 700 MCM Ø24,45 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      if(span<70||span>958)return{valid:false,message:"La pauta SPA450CA25 está documentada para vanos de 70 a 958 m."};
+      if(number("tension")>15.71+.02)return{valid:false,message:"El estudio valida la pauta para un tense máximo de 15,71 kN."};
+      const subspans=charruaBundleSubspans(span),positions=[];let sum=0;subspans.slice(0,-1).forEach(value=>{sum+=value;positions.push(Number(sum.toFixed(3)));});
+      return{valid:true,rule,span,total:positions.length,model:"SPA450CA25",family:"SPA450CA",range:"70 ≤ L ≤ 958 m; subvano máximo 68 m",positions,leftDistances:[],rightDistances:[],support,supportB,charruaBundle:true,subspans,installationNote:`Pauta desigual: ${subspans.join(" + ")} m. Extremos 32/36 m; distribución exacta publicada para L=${Math.round(span)} m${[450,958].includes(Math.round(span))?".":"; para otros vanos se genera conservadoramente con subvanos ≤68 m y debe contrastarse con el Anexo 2."}`};
+    } else if (rule === "charrua") {
+      const data=currentReference?.data;
+      if(!data)return{valid:false,message:"Cargue uno de los estudios EA11 de Ancoa-Alto Jahuel."};
+      if(Math.abs(diameter-data.diameter)>.8)return{valid:false,message:`La pauta ${data.code} corresponde a ${data.label} Ø${data.diameter.toFixed(2)} mm; D actual = ${diameter.toFixed(2)} mm.`};
+      if(span<70||span>960)return{valid:false,message:"Los estudios documentan vanos entre 70 y 960 m."};
+      if(number("tension")>data.tension+.02)return{valid:false,message:`El tense introducido supera el máximo estudiado de ${data.tension.toFixed(2)} kN.`};
+      const band=span<=data.threshold1?"short":span<=data.threshold2?"medium":"long";
+      let leftCount=0,rightCount=0;
+      if(band==="short"){
+        if(data.preformed){
+          if(support!=="tension")leftCount=1;else if(supportB!=="tension")rightCount=1;else leftCount=2;
+        }else{
+          if(supportB!=="tension")rightCount=1;else leftCount=1;
+        }
+      }else{
+        const base=band==="medium"?1:2;
+        leftCount=base+(data.preformed&&support==="tension"?1:0);rightCount=base+(data.preformed&&supportB==="tension"?1:0);
+      }
+      const distances=(type,count)=>Array.from({length:count},(_,i)=>Number(((type==="tension"?data.tensionFirst:data.suspFirst)+i*data.spacing).toFixed(3)));
+      const leftDistances=distances(support,leftCount),rightDistances=distances(supportB,rightCount),positions=[...leftDistances,...rightDistances.map(x=>Number((span-x).toFixed(3)))].sort((a,b)=>a-b);
+      const range=band==="short"?`L ≤ ${data.threshold1} m`:band==="medium"?`${data.threshold1} < L ≤ ${data.threshold2} m`:`${data.threshold2} < L ≤ 960 m`;
+      const beaconNote=data.beacons?"Con balizas: conservar estas unidades de extremo y añadir al menos una unidad en cada subvano entre dos balizas, según el plano real.":"";
+      return{valid:true,rule,span,total:positions.length,model:data.model,family:"amortiguador_SAPREM_AMG",range,positions,leftDistances,rightDistances,support,supportB,beaconNote,installationNote:`Suspensión: primera unidad a ${data.suspFirst.toFixed(3)} m del eje. Amarre: primera a ${data.tensionFirst.toFixed(2)} m ${data.preformed?"del final de la retención preformada":"de la salida de la grapa"}. Separación adicional ${data.spacing.toFixed(2)} m entre ejes.${data.preformed?" El recuento incluye una unidad adicional en cada amarre.":""}`};
+    } else if (rule === "ec0016") {
+      if (Math.abs(diameter-9.34)>.5) return {valid:false,message:`El estudio EC-90.0016 corresponde al Cu 1/0 AWG Ø9,34 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      if (span<18.8||span>198.1) return {valid:false,message:"El estudio solo documenta vanos entre 18,8 y 198,1 m."};
+      if (number("tension")>1.432+.002) return {valid:false,message:"El dictamen sin amortiguadores solo está validado para un tense inicial máximo de 146 kg (1,432 kN)."};
+      return {valid:true,rule,span,total:0,model:"",family:"",range:"18,8 ≤ L ≤ 198,1 m; T inicial ≤ 1,432 kN",positions:[],leftDistances:[],rightDistances:[],support,supportB,installationNote:"El informe concluye que no se necesita amortiguamiento exterior. No se publica un modelo ni una cota para la alternativa opcional."};
+    } else if (rule === "lab") {
+      if (Math.abs(diameter-17.24)>.8) return {valid:false,message:`La pauta 02042-13-L corresponde al ACAR 350 MCM Ø17,24 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      if (span>350) return {valid:false,message:"El estudio 02042-13-L valida esta pauta únicamente para vanos L ≤ 350 m."};
+      const distance = (type) => type === "tension" ? 1.00 : 1.10;
+      const leftDistances=[distance(support)], rightDistances=[distance(supportB)];
+      const positions=[leftDistances[0],Number((span-rightDistances[0]).toFixed(3))].sort((a,b)=>a-b);
+      return {valid:true,rule,span,total:2,model:"AMG-050920",family:"amortiguador_SAPREM_AMG",range:"L ≤ 350 m",positions,leftDistances,rightDistances,support,supportB,installationNote:"Amarre: 1,00 m desde la salida de la grapa de compresión. Suspensión: 1,10 m desde el eje de la grapa, o 0,26 m desde el final de las varillas VPAL 166-172 de 1,68 m. Tolerancia según plano de fabricación."};
+    } else if(rule==="lchc007"){
+      if(Math.abs(diameter-24.45)>.2)return{valid:false,message:`La tabla DS-522-15 corresponde al ACAR 700 MCM Ø24,45 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      const tableSpan=Math.round(span),allocation=lchcEs007Allocation[tableSpan];
+      if(!allocation)return{valid:false,message:"La tabla SALVI solo cubre vanos enteros entre 50 y 1000 m."};
+      let cumulative=0;const positions=allocation.subspans.slice(0,-1).map(value=>{cumulative+=value;return cumulative;});
+      return{valid:true,rule,span,total:allocation.count,model:"3931S4015A26F",family:"separador_amortiguador_SALVI",range:`tabla exacta L=${tableSpan} m (50-1000 m)`,positions,leftDistances:[],rightDistances:[],support,supportB,lchc007:true,tableSpan,subspans:allocation.subspans,installationNote:`Distribución del Anexo 1: ${allocation.subspans.join(" + ")} m. Posiciones acumuladas desde A: ${positions.join(", ")} m.${Math.abs(span-tableSpan)>.001?` El vano introducido se redondeó a ${tableSpan} m para consultar la tabla entera.`:""}`};
+    }else if (rule === "lchc") {
+      if (diameter < 12.3 || diameter > 17.5) return {valid:false,message:`La pauta SALVI 4M está documentada para OPGW Ø12,8, Ø13,3 y Ø17 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      const beacons=Boolean(currentReference?.data?.beacons);
+      if (beacons && (Math.abs(span-798.65)>.1 || support!=="tension" || supportB!=="tension")) return {valid:false,message:"El DS-608/16 solo documenta el vano de 798,65 m con amarre en ambos extremos y 19 balizas."};
+      if (!beacons && Math.abs(span-480)>.1) return {valid:false,message:"El DS-521/15 presenta resultados exclusivamente para el vano de cálculo L = 480 m."};
+      const sideItems=(type,side)=>type==="tension"
+        ? [{model:"4M323AB0532",distance:1.2,position:side==="A"?1.2:Number((span-1.2).toFixed(3))},{model:"4M233AB0723",distance:1.8,position:side==="A"?1.8:Number((span-1.8).toFixed(3))}]
+        : [{model:"4M233AB0723",distance:.6,position:side==="A"?.6:Number((span-.6).toFixed(3))}];
+      const left=sideItems(support,"A"), right=sideItems(supportB,"B");
+      const sphereItems=[];
+      if(beacons){const first=(span-(currentReference.data.beacons-1)*40)/2; for(let i=0;i<currentReference.data.beacons;i+=1)sphereItems.push({model:"4M233AB0723",position:Number((first+i*40+.6).toFixed(3)),distance:.6,beacon:i+1});}
+      const items=[...left,...sphereItems,...right].sort((a,b)=>a.position-b.position);
+      return {valid:true,rule,span,total:items.length,model:beacons?"4M323AB0532 + 4M233AB0723":"4M233AB0723 / 4M323AB0532",family:"amortiguador_SALVI_4M",range:beacons?"L = 798,65 m con 19 balizas":"L = 480 m",positions:items.map(x=>x.position),leftDistances:left.map(x=>x.distance),rightDistances:right.map(x=>x.distance),support,supportB,items,beacons:beacons?19:0,installationNote:beacons?"Amarre: 4M323 a 1,20 m y 4M233 a 1,80 m desde cada extremo. Una 4M233 a 0,60 m después de cada baliza, sobre 10 varillas Ø4,62 × 1500 mm. Las posiciones interiores mostradas suponen las 19 balizas centradas y separadas 40 m; confirmar la primera cota con el plano de balizamiento.":"Suspensión: 4M233 a 0,60 m de la AGS. Amarre: 4M323 a 1,20 m y 4M233 0,60 m después (1,80 m desde el extremo)."};
+    } else if (rule === "doc1058") {
+      if (Math.abs(diameter-23.55)>.8) return {valid:false,message:`El DOC N.º 1058 está documentado para ACCC Dove Ø23,55 mm; D actual = ${diameter.toFixed(2)} mm.`};
+      if (Math.abs(span-350)>.1) return {valid:false,message:"El documento solo presenta resultados y ubicación para el vano de demostración L = 350 m; las tablas por tramo citadas no están incluidas."};
+      if (support!=="suspension_rods" || supportB!=="suspension_rods") return {valid:false,message:"La corrida documentada corresponde exclusivamente a suspensión AGS con varillas en ambos extremos."};
+      return {valid:true,rule,span,total:2,model:"VSD-35..",family:"amortiguador_PLP_VORTX",range:"L = 350 m; AGS-AGS",positions:[.74,349.26],leftDistances:[.74],rightDistances:[.74],support,supportB,installationNote:"Una unidad a 0,74 m de cada extremo, medida desde el centro del tornillo de la AGS al centro de la grapa VSD. Instalar sobre preformados, nunca directamente sobre el ACCC. Confirmar el sufijo de grapa según el diámetro exterior de las varillas."};
+    } else if (rule === "greeley" || rule === "greeley_beacons") {
+      if (Math.abs(diameter - 28.15) > 1) return { valid:false, message:`La pauta EA13-050612 está documentada para AAAC GREELEY Ø28,15 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 500) return { valid:false, message:"El EA13-050612 valida esta pauta únicamente hasta L = 500 m." };
+      const beacons = rule === "greeley_beacons";
+      const distance = (type) => type === "tension" ? 0.75 : 1.36;
+      const counts = () => {
+        if (beacons) return span <= 250 ? [1,1] : [2,2];
+        if (span <= 125) {
+          if (support === "tension" && supportB === "suspension") return [0,1];
+          return [1,0];
+        }
+        if (span <= 250) return [1,1];
+        if (span <= 350) return support === "tension" && supportB === "suspension" ? [1,2] : [2,1];
+        return [2,2];
+      };
+      const [leftCount,rightCount] = counts();
+      const distances = (type,count) => count ? Array.from({length:count},(_,i)=>Number((distance(type)+i*.60).toFixed(3))) : [];
+      const leftDistances = distances(support,leftCount), rightDistances = distances(supportB,rightCount);
+      const positions = [...leftDistances,...rightDistances.map((x)=>Number((span-x).toFixed(3)))].sort((a,b)=>a-b);
+      const range = beacons ? (span <= 250 ? "L ≤ 250 m con balizas" : "250 < L ≤ 500 m con balizas") : span <= 125 ? "L ≤ 125 m" : span <= 250 ? "125 < L ≤ 250 m" : span <= 350 ? "250 < L ≤ 350 m" : "350 < L ≤ 500 m";
+      return { valid:true,rule,span,total:positions.length,model:"AMG-152429",family:"amortiguador_SAPREM_AMG",range,positions,leftDistances,rightDistances,support,supportB,beaconCondition:beacons,installationNote:"Suspensión: primera unidad a 1,36 m del eje de la grapa (90 mm después de las varillas). Amarre: primera a 0,75 m de la salida de la grapa de compresión. Segunda unidad a 0,60 m entre ejes. Tolerancia ±10 mm.",beaconNote:beacons?"Este anexo modifica la cantidad en los extremos; no prescribe amortiguadores adicionales junto a las esferas.":""};
+    } else if (rule === "acar1000") {
+      if (Math.abs(diameter - 29.23) > 1) return { valid:false, message:`La pauta EA15-121816 está documentada para ACAR 1000 MCM Ø29,23 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 630) return { valid:false, message:"El estudio vibratorio valida la pauta únicamente hasta L = 630 m." };
+      const distance = (type) => type === "tension" ? 1.00 : type === "suspension_rods" ? 1.37 : 1.10;
+      let leftPerConductor = 0, rightPerConductor = 0;
+      if (span <= 300) {
+        if (support !== "tension" && supportB === "tension") leftPerConductor = 1;
+        else rightPerConductor = 1;
+      } else { leftPerConductor = 1; rightPerConductor = 1; }
+      const leftDistances = Array(leftPerConductor * 2).fill(distance(support));
+      const rightDistances = Array(rightPerConductor * 2).fill(distance(supportB));
+      const positions = [...leftDistances,...rightDistances.map((x)=>Number((span-x).toFixed(3)))].sort((a,b)=>a-b);
+      const subspans = acar500Subspans(span); const spacerPositions = subspans.slice(0,-1).map((_,i)=>Number(subspans.slice(0,i+1).reduce((s,v)=>s+v,0).toFixed(2)));
+      const range = span <= 118 ? "L ≤ 118 m; T inicial ≤ 43,35 kN" : span <= 300 ? "118 < L ≤ 300 m; T inicial ≤ 23,3 kN" : span <= 550 ? "300 < L ≤ 550 m; T inicial ≤ 23,3 kN" : "550 < L ≤ 630 m; T inicial ≤ 18,08 kN";
+      return { valid:true, rule, span, total:positions.length, model:"AMG-152429", family:"amortiguador_SAPREM_AMG", range, positions, leftDistances, rightDistances, support, supportB, bundle:true, spacerModel:"SPA450DA30", spacerPositions, spacerCount:spacerPositions.length, subspans, installationNote:"AMG: 1,00 m desde la salida de amarre; 1,10 m desde el eje de suspensión sin varillas; 1,37 m desde el eje con varillas (100 mm después del extremo de varillas). Tolerancia ±10 mm. Separadores: ±0,5 m." };
+    } else if (rule === "ea15opgw" || rule === "ea15opgw_beacons") {
+      if (Math.abs(diameter - 20.6) > 1) return { valid: false, message: `La pauta EA15-121818 está documentada para el OPGW ZTT Ø20,6 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 630) return { valid: false, message: "El estudio solo valida la pauta hasta L = 630 m." };
+      const beacons = rule === "ea15opgw_beacons";
+      const countAt = (type, side) => {
+        const tensionSupport = type === "tension";
+        if (span > 500) return tensionSupport ? 3 : 2;
+        if (beacons || span > 250) return tensionSupport ? 2 : 1;
+        if (support === "tension" && supportB === "tension") return side === "A" ? 2 : 0;
+        if (support !== "tension") return side === "A" ? 1 : 0;
+        return side === "B" ? 1 : 0;
+      };
+      const distances = (type, count) => {
+        if (!count) return [];
+        if (type === "tension") return [0.08,0.83,1.43].slice(0,count);
+        return [0.75,1.35].slice(0,count);
+      };
+      const leftDistances = distances(support, countAt(support,"A"));
+      const rightDistances = distances(supportB, countAt(supportB,"B"));
+      const positions = [...leftDistances, ...rightDistances.map((x) => Number((span - x).toFixed(3)))].sort((a,b) => a-b);
+      const range = span <= 250 ? "L ≤ 250 m" : span <= 500 ? "250 < L ≤ 500 m" : "500 < L ≤ 630 m";
+      return { valid: true, rule, span, total: positions.length, model: "AMG-091534", family: "amortiguador_SAPREM_AMG", range: `${range}${beacons ? " con balizas esféricas" : " sin balizas esféricas"}`, positions, leftDistances, rightDistances, support, supportB, beaconCondition:beacons, beaconNote: beacons ? "Añadir un AMG091534 a 0,75 m de cada baliza, sobre varillas VPAW FO 21/I/800. Debe existir al menos un amortiguador en cada subvano generado por balizas." : "", installationNote: "Suspensión: 0,75 m desde el eje; segunda unidad a 0,60 m. Amarre: primera a 0,08 m del final de las varillas, segunda a 0,75 m y tercera a 0,60 m. Todas sobre VPAW FO 21/I/800; tolerancia ±10 mm." };
+    } else if (rule === "acar500") {
+      if (Math.abs(diameter - 20.66) > 1) return { valid: false, message: `La pauta EA16-111644 está documentada para ACAR 500 MCM Ø20,66 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 450) return { valid: false, message: "El estudio solo valida la pauta hasta L = 450 m." };
+      if (span > 170 && span <= 350) return { valid: false, message: "El informe no documenta una pauta para 170 < L â‰¤ 350 m; no se interpola sin una nueva simulaciÃ³n." };
+      const distance = (type) => type === "tension" ? 0.60 : type === "suspension_rods" ? 1.20 : 0.69;
+      const leftDistances = [distance(support), distance(support)];
+      const rightDistances = [distance(supportB), distance(supportB)];
+      const positions = [...leftDistances, ...rightDistances.map((x) => Number((span - x).toFixed(3)))].sort((a, b) => a - b);
+      const subspans = acar500Subspans(span);
+      const spacerPositions = subspans.slice(0, -1).map((_, i) => Number(subspans.slice(0, i + 1).reduce((sum, value) => sum + value, 0).toFixed(2)));
+      return { valid: true, rule, span, total: 4, model: "AMG-091526", family: "amortiguador_SAPREM_AMG", range: span <= 170 ? "L ≤ 170 m; T inicial ≤ 26,33 kN" : "350 < L ≤ 450 m; T inicial ≤ 16,22 kN", positions, leftDistances, rightDistances, support, supportB, bundle: true, spacerModel: "SPA450DA21", spacerPositions, spacerCount: spacerPositions.length, subspans, installationNote: "AMG: 0,60 m desde la salida de amarre; 0,69 m desde el eje de suspensión sin varillas; 1,20 m desde el eje con varillas (235 mm después del extremo de varillas). Tolerancia ±10 mm. Separadores: ±0,5 m." };
+    } else if (rule === "opgw128") {
+      if (Math.abs(diameter - 12.8) > 0.8) return { valid: false, message: `La pauta EC-90.0013 AB está documentada para el OPGW Ø 12,8 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 500) return { valid: false, message: "El EC-90.0013 AB solo valida esta pauta para vanos L ≤ 500 m." };
+      const distances = span <= 250 ? [0.82] : [0.82, 1.40];
+      const positions = [...distances, ...distances.map((x) => Number((span - x).toFixed(3)))].sort((a, b) => a - b);
+      return { valid: true, rule, span, total: positions.length, model: "4D-20", family: "amortiguador_4D", range: span <= 250 ? "0 < L ≤ 250 m" : "250 < L ≤ 500 m", positions, leftDistances: distances, rightDistances: distances, support, supportB, installationNote: "Primera unidad a 0,82 m; segunda unidad 0,58 m más adentro (1,40 m desde el extremo). Tolerancia ±10 mm." };
+    } else if (rule === "monteaguila13") {
+      if (Math.abs(diameter - 13.4) > 1) return { valid: false, message: `La pauta EA26-071314 está documentada para el OPGW Ø 13,4 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (support !== "tension" || supportB !== "tension") return { valid: false, message: "La pauta EA26-071314 corresponde a amarre preformado en ambos extremos." };
+      const shortSpan = Math.abs(span - 30.3) <= 0.2;
+      const longSpan = Math.abs(span - 207.3) <= 0.2;
+      if (!shortSpan && !longSpan) return { valid: false, message: "El EA26-071314 solo documenta los vanos exactos L = 30,3 m y L = 207,3 m; no se extrapola la pauta a otras longitudes." };
+      const leftDistances = [0.08, 0.53];
+      const rightDistances = longSpan ? [0.08, 0.53] : [];
+      const positions = [...leftDistances, ...rightDistances.map((x) => Number((span - x).toFixed(3)))].sort((a, b) => a - b);
+      const optional = shortSpan && number("tension") <= 3.08 + 0.01;
+      return { valid: true, rule, span, total: positions.length, model: "AMG-050926", family: "amortiguador_SAPREM_AMG", range: shortSpan ? "L = 30,3 m" : "L = 207,3 m", positions, leftDistances, rightDistances, support, supportB, optional, installationNote: `L1 = 0,08 m desde el final de la retención; L2 = 0,45 m entre ejes. Tolerancia ±10 mm.${optional ? " Con tense inicial 3,08 kN el informe no exige amortiguamiento; esta instalación es opcional." : ""}` };
+    } else if (rule === "monteaguila") {
+      if (Math.abs(diameter - 16.4) > 1) return { valid: false, message: `La pauta EA26-071313 está documentada para el OPGW Ø 16,4 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 112) return { valid: false, message: "El EA26-071313 valida esta pauta únicamente para vanos L ≤ 112 m." };
+      if (support !== "tension" || supportB !== "tension") return { valid: false, message: "La pauta EA26-071313 corresponde a amarre preformado en ambos extremos." };
+      return { valid: true, rule, span, total: 2, model: "AMG-091526", family: "amortiguador_SAPREM_AMG", range: "L ≤ 112 m", positions: [0.08, 0.68], leftDistances: [0.08, 0.68], rightDistances: [], support, supportB, installationNote: "L1 = 0,08 m desde el final de la retención; L2 = 0,60 m entre ejes. Tolerancia ±10 mm." };
+    } else if (rule === "alumoweld") {
+      if (diameter < 7 || diameter > 13) return { valid: false, message: `El AMG-030513 utiliza grapa G-13 para Ø 7-13 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 35) return { valid: false, message: "La pauta opcional del EA26-071312 solo está documentada para vanos L ≤ 35 m." };
+      if (support !== "tension" || supportB !== "tension") return { valid: false, message: "El EA26-071312 está calculado con retenciones preformadas en ambos extremos." };
+      return { valid: true, rule, span, total: 1, model: "AMG-030513", family: "amortiguador_SAPREM_AMG", range: "L ≤ 35 m", positions: [Number((span - 0.95).toFixed(3))], leftDistances: [], rightDistances: [0.95], support, supportB, optional: true };
+    } else if (rule === "ea26") {
+      if (diameter < 34 || diameter > 40) return { valid: false, message: `El AMG-152440 utiliza grapa G-40 para Ø 34-40 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 215) return { valid: false, message: "El EA26-071311 valida el sistema completo únicamente para vanos L ≤ 215 m." };
+      if (support !== "tension" || supportB !== "tension") return { valid: false, message: "El caso calculado en EA26-071311 corresponde a amarre en ambos extremos." };
+      const subspans = ea26Subspans(span);
+      if (span < 29) return { valid: true, rule, span, total: 0, model: "AMG-152440", family: "amortiguador_SAPREM_AMG", range: "L < 29 m destensado", positions: [], leftDistances: [], rightDistances: [], support, supportB, bundle: true, spacerPositions: [], subspans };
+      const spacerPositions = subspans.slice(0, -1).map((_, i) => Number(subspans.slice(0, i + 1).reduce((sum, value) => sum + value, 0).toFixed(2)));
+      const leftDistances = [1, 1], rightDistances = [1, 1];
+      const positions = [1, 1, Number((span - 1).toFixed(3)), Number((span - 1).toFixed(3))];
+      return { valid: true, rule, span, total: 4, damperTotal: 4, model: "AMG-152440", family: "amortiguador_SAPREM_AMG", range: "29 ≤ L ≤ 215 m", positions, leftDistances, rightDistances, support, supportB, bundle: true, spacerModel: "SPA400DA35", spacerPositions, spacerCount: spacerPositions.length, subspans };
+    } else if (rule === "flint") {
+      if (diameter < 18 || diameter > 28) return { valid: false, message: `El FR-3 está especificado para conductores Ø 18-28 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 350) return { valid: false, message: "El informe EC-90.0014 solo valida esta pauta para vanos L ≤ 350 m; solicite un diseño especial para vanos mayores." };
+      model = "FR-3"; family = "amortiguador_FR3"; range = "L ≤ 350 m";
+      const linearMassKgKm = number("mass") * 1000;
+      const edsKn = number("tension");
+      const l1 = Math.floor(0.415 * diameter * Math.sqrt(edsKn / linearMassKgKm) * 100) / 100;
+      const distance = (type) => Math.floor((type === "suspension_rods" ? 1.1 * l1 : l1) * 100) / 100;
+      const leftDistances = [distance(support)], rightDistances = [distance(supportB)];
+      const positions = [leftDistances[0], Number((span - rightDistances[0]).toFixed(3))].sort((a, b) => a - b);
+      return { valid: true, rule, span, total: 2, model, family, range, positions, leftDistances, rightDistances, support, supportB };
+    } else if (rule === "ea16") {
+      if (Math.abs(diameter - 14.3) > 1) return { valid: false, message: `La pauta AMG-091526 sobre varillas del EA16 está documentada para el OPGW de 14,3 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      if (span > 1000) return { valid: false, message: "El EA16-042811 solo valida vanos hasta 1000 m." };
+      model = "AMG-091526"; family = "amortiguador_SAPREM_AMG";
+      const base = span <= 350 ? 1 : span <= 700 ? 2 : 3;
+      range = span <= 350 ? "L ≤ 350 m" : span <= 700 ? "350 < L ≤ 700 m" : "700 < L ≤ 1000 m";
+      const distances = (type) => {
+        if (type === "suspension_rods") type = "suspension";
+        const count = base + (type === "tension" ? 1 : 0);
+        if (type === "suspension") {
+          const start = span > 700 ? 0.60 : 0.55;
+          return Array.from({ length: count }, (_, i) => Number((start + i * 0.55).toFixed(3)));
+        }
+        const values = [0.08];
+        const firstGap = span > 700 ? 0.60 : 0.55;
+        if (count > 1) values.push(Number((0.08 + firstGap).toFixed(3)));
+        while (values.length < count) values.push(Number((values.at(-1) + 0.55).toFixed(3)));
+        return values;
+      };
+      const leftDistances = distances(support);
+      const rightDistances = distances(supportB);
+      const positions = [...leftDistances, ...rightDistances.map((x) => Number((span - x).toFixed(3)))].sort((a, b) => a - b);
+      return { valid: true, rule, span, total: positions.length, model, family, range, positions, leftDistances, rightDistances, support, supportB };
+    } else if (rule === "cairo") {
+      if (diameter < 12 || diameter > 22) return { valid: false, message: `La pauta FR-2 solo está validada para 12 ≤ D ≤ 22 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      model = "FR-2"; family = "amortiguador_FR"; first = support === "tension" ? 1.2 : 1.3; spacing = 1.2;
+      if (span < 100) { total = 0; range = "L < 100 m"; }
+      else if (span <= 350) { total = 2; range = "100 ≤ L ≤ 350 m"; }
+      else if (span <= 700) { total = 4; range = "350 < L ≤ 700 m"; }
+      else return { valid: false, message: "Para AAAC Cairo con L > 700 m el informe exige un diseño especial del proveedor." };
+    } else if (rule === "opgw") {
+      if (diameter > 15) return { valid: false, message: `La pauta 4D-20 solo está validada para D ≤ 15 mm; D actual = ${diameter.toFixed(2)} mm.` };
+      model = "4D-20"; family = "amortiguador_4D"; first = 0.7; spacing = 0.58;
+      if (span <= 250) { total = 2; range = "0 < L ≤ 250 m"; }
+      else if (span <= 500) { total = 4; range = "250 < L ≤ 500 m"; }
+      else if (span <= 800) { total = 6; range = "500 < L ≤ 800 m"; }
+      else return { valid: false, message: "Para OPGW con L > 800 m el informe exige un diseño especial del proveedor." };
+    } else return { valid: false, message: "Seleccione la regla AAAC Cairo/FR-2 u OPGW/4D-20 para obtener una recomendación verificada." };
+    const perSide = total / 2;
+    const fromEachEnd = Array.from({ length: perSide }, (_, i) => Number((first + i * spacing).toFixed(3)));
+    const positions = [...fromEachEnd, ...fromEachEnd.map((x) => Number((span - x).toFixed(3)))].sort((a, b) => a - b);
+    return { valid: true, rule, span, total, perSide, first, spacing, model, family, range, positions, fromEachEnd, leftDistances: fromEachEnd, rightDistances: fromEachEnd, support, supportB };
+  }
+
+  function updateRecommendation() {
+    const rec = makeRecommendation();
+    $("applyRecommendation").disabled = !rec.valid;
+    if (!rec.valid) {
+      $("recommendationText").innerHTML = `<strong>Sin recomendación automática.</strong><br>${rec.message}`;
+      drawInstallationDiagram(null);
+      return;
+    }
+    const leftCount = rec.leftDistances.length, rightCount = rec.rightDistances.length;
+    const sideText = (count, distances) => count ? `${count} unidad(es) a ${distances.map((x) => x.toFixed(2)).join(", ")} m` : "ninguna unidad";
+    const placement = rec.lchc007 || rec.charruaBundle ? `${rec.total} separadores-amortiguadores interiores a ${rec.positions.map(x=>x.toFixed(0)).join(", ")} m desde A.` : rec.total ? `Apoyo A: ${sideText(leftCount, rec.leftDistances)}. Apoyo B: ${sideText(rightCount, rec.rightDistances)} desde su extremo.` : "No se requieren amortiguadores según la tabla del ejemplo.";
+    const spacerText = rec.bundle && rec.spacerCount ? `<br><strong>${rec.spacerCount} separadores-amortiguadores ${rec.spacerModel}</strong> por fase, a ${rec.spacerPositions.map((x) => x.toFixed(0)).join(", ")} m desde A.<br><span class="hint">Subvanos: ${rec.subspans.join(" + ")} m. En circuito trifásico: ${rec.total * 3} AMG y ${rec.spacerCount * 3} separadores.</span>` : "";
+    const optionalText = rec.optional ? '<br><span class="hint"><strong>Opcional:</strong> el cálculo sin amortiguadores ya cumple; instalar únicamente si la ingeniería desea seguridad adicional.</span>' : "";
+    const installationNote = rec.installationNote ? `<br><span class="hint"><strong>Cotas del plano:</strong> ${rec.installationNote}</span>` : "";
+    const beaconText = rec.beacons && Array.isArray(rec.items) ? `<br><span class="hint"><strong>Balizas:</strong> ${rec.beacons} unidades; una 4M233AB0723 a 0,60 m después de cada baliza.</span>` : rec.beaconNote ? `<br><span class="hint"><strong>Balizas:</strong> ${rec.beaconNote}</span>` : "";
+    const accessoryName = rec.lchc007 || rec.charruaBundle ? (rec.total === 1 ? "separador-amortiguador" : "separadores-amortiguadores") : (rec.total === 1 ? "amortiguador" : "amortiguadores");
+    $("recommendationText").innerHTML = `<strong>${rec.total} ${accessoryName} ${rec.model}</strong> (A: ${leftCount}; B: ${rightCount}).<br>${placement}${optionalText}${spacerText}${installationNote}${beaconText}<br><span class="hint">Rango aplicado: ${rec.range}. Posiciones globales desde A: ${rec.positions.length ? rec.positions.map((x) => x.toFixed(2)).join(", ") + " m" : "ninguna"}.</span>`;
+    drawInstallationDiagram(rec);
+  }
+
+  function drawInstallationDiagram(rec) {
+    const svg = $("installationDiagram");
+    if(rec?.charruaBundle){
+      const xAt=p=>70+p/rec.span*620,marks=rec.positions.map((p,i)=>`<g><line x1="${xAt(p)}" y1="50" x2="${xAt(p)}" y2="90" stroke="#7c3aed" stroke-width="4"/><rect x="${xAt(p)-5}" y="65" width="10" height="10" transform="rotate(45 ${xAt(p)} 70)" fill="#c4b5fd" stroke="#4c1d95"/><text x="${xAt(p)}" y="108" text-anchor="middle" font-size="9">${p.toFixed(0)} m</text></g>`).join("");
+      svg.innerHTML=`<text x="380" y="22" text-anchor="middle" font-size="14" fill="#17324d">ACAR 700 MCM · haz cuádruple · vano ${rec.span.toFixed(0)} m</text><line x1="55" y1="70" x2="705" y2="70" stroke="#17324d" stroke-width="4"/><path d="M35 145 L55 70 L75 145 M685 145 L705 70 L725 145" fill="none" stroke="#607484" stroke-width="3"/>${marks}<text x="380" y="140" text-anchor="middle" font-size="12" fill="#7c3aed">${rec.total} × SPA450CA25 · subvanos ${rec.subspans.join(" / ")} m</text>`;refreshDiagramZoom();return;
+    }
+    if(rec?.lchc007){
+      const xAt=p=>70+p/rec.tableSpan*620,marks=rec.positions.map((p,i)=>`<g><line x1="${xAt(p)}" y1="50" x2="${xAt(p)}" y2="90" stroke="#7c3aed" stroke-width="4"/><rect x="${xAt(p)-5}" y="65" width="10" height="10" transform="rotate(45 ${xAt(p)} 70)" fill="#c4b5fd" stroke="#4c1d95"/><text x="${xAt(p)}" y="108" text-anchor="middle" font-size="9">${p} m</text></g>`).join("");
+      svg.innerHTML=`<text x="380" y="22" text-anchor="middle" font-size="14" fill="#17324d">Haz cuádruple · vano tabulado ${rec.tableSpan} m</text><line x1="55" y1="70" x2="705" y2="70" stroke="#17324d" stroke-width="4"/><path d="M35 145 L55 70 L75 145 M685 145 L705 70 L725 145" fill="none" stroke="#607484" stroke-width="3"/>${marks}<text x="380" y="140" text-anchor="middle" font-size="12" fill="#7c3aed">${rec.total} × 3931S4015A26F · subvanos ${rec.subspans.join(" / ")} m</text>`;refreshDiagramZoom();return;
+    }
+    if(rec?.beacons && Array.isArray(rec.items)){
+      const xAt=p=>70+p/rec.span*620;
+      const spheres=rec.items.filter(x=>x.beacon).map(x=>`<g><circle cx="${xAt(x.position-.6)}" cy="70" r="7" fill="#f59e0b" stroke="#92400e"/><line x1="${xAt(x.position)}" y1="53" x2="${xAt(x.position)}" y2="87" stroke="#087f8c" stroke-width="3"/></g>`).join("");
+      svg.innerHTML=`<text x="380" y="22" text-anchor="middle" font-size="14" fill="#17324d">Vano ${rec.span.toFixed(2)} m · 19 balizas cada 40 m</text><line x1="55" y1="70" x2="705" y2="70" stroke="#17324d" stroke-width="4"/><path d="M35 145 L55 70 L75 145 M685 145 L705 70 L725 145" fill="none" stroke="#607484" stroke-width="3"/>${spheres}<text x="380" y="120" text-anchor="middle" font-size="12" fill="#087f8c">23 amortiguadores: 4 en extremos + 19 junto a balizas</text><text x="380" y="145" text-anchor="middle" font-size="11" fill="#607484">Extremos: 4M323 a 1,20 m + 4M233 a 1,80 m · balizas: 4M233 a 0,60 m</text>`;
+      refreshDiagramZoom();return;
+    }
+    if (rec?.bundle && rec.total) {
+      const xAt = (position) => 70 + position / rec.span * 620;
+      const spacers = rec.spacerPositions.map((position, i) => { const x = xAt(position); return `<g><line x1="${x}" y1="62" x2="${x}" y2="108" stroke="#7c3aed" stroke-width="5"/><rect x="${x - 7}" y="78" width="14" height="14" transform="rotate(45 ${x} 85)" fill="#c4b5fd" stroke="#4c1d95"/><text x="${x}" y="125" text-anchor="middle" font-size="10">S${i + 1}: ${position.toFixed(0)} m</text></g>`; }).join("");
+      const damperMark = (x,y) => `<g><line x1="${x}" y1="${y - 10}" x2="${x}" y2="${y + 10}" stroke="#087f8c" stroke-width="5"/><circle cx="${x}" cy="${y}" r="7" fill="#f0b429" stroke="#17324d"/></g>`;
+      const dampersSvg = [...rec.leftDistances.slice(0,2).map((_,i)=>damperMark(82,[65,105][i])), ...rec.rightDistances.slice(0,2).map((_,i)=>damperMark(678,[65,105][i]))].join("");
+      const leftCotas = [...new Set(rec.leftDistances)].map((x) => x.toFixed(2)).join(" / ");
+      const rightCotas = [...new Set(rec.rightDistances)].map((x) => x.toFixed(2)).join(" / ");
+      svg.innerHTML = `<text x="380" y="22" text-anchor="middle" font-size="14" fill="#17324d">Haz dúplex · vano ${rec.span} m</text><line x1="55" y1="65" x2="705" y2="65" stroke="#17324d" stroke-width="3"/><line x1="55" y1="105" x2="705" y2="105" stroke="#17324d" stroke-width="3"/><path d="M35 165 L55 45 L75 165 M685 165 L705 45 L725 165" fill="none" stroke="#607484" stroke-width="3"/>${spacers}${dampersSvg}<text x="380" y="155" text-anchor="middle" font-size="12" fill="#087f8c">${rec.total} × ${rec.model}: 1 por extremo y subconductor · A ${leftCotas} m / B ${rightCotas} m</text><text x="380" y="182" text-anchor="middle" font-size="12" fill="#6d28d9">${rec.spacerCount} × ${rec.spacerModel} · subvanos ${rec.subspans.join(" / ")} m</text><text x="380" y="208" text-anchor="middle" font-size="11" fill="#607484">Cantidades por fase; multiplicar ×3 para el circuito trifásico</text>`;
+      refreshDiagramZoom();
+      return;
+    }
+    const base = `<line x1="55" y1="70" x2="705" y2="70" stroke="#17324d" stroke-width="4"/><path d="M35 145 L55 70 L75 145 M685 145 L705 70 L725 145" fill="none" stroke="#607484" stroke-width="3"/><text x="380" y="25" text-anchor="middle" font-size="14" fill="#17324d">Vano ${number("span") || 0} m</text>`;
+    if (!rec || !rec.total) {
+      svg.innerHTML = base + `<text x="380" y="110" text-anchor="middle" font-size="14" fill="#607484">${rec ? "Sin amortiguadores requeridos" : "Sin pauta aplicable"}</text>`;
+      refreshDiagramZoom();
+      return;
+    }
+    const marks = [];
+    rec.leftDistances.forEach((distance, i) => {
+      const xl = 115 + i * 72;
+      marks.push(`<g><line x1="${xl}" y1="55" x2="${xl}" y2="86" stroke="#087f8c" stroke-width="5"/><circle cx="${xl}" cy="70" r="9" fill="#f0b429" stroke="#17324d"/><text x="${xl}" y="106" text-anchor="middle" font-size="12">${distance.toFixed(2)} m</text></g>`);
+    });
+    rec.rightDistances.forEach((distance, i) => {
+      const xr = 645 - i * 72;
+      marks.push(`<g><line x1="${xr}" y1="55" x2="${xr}" y2="86" stroke="#087f8c" stroke-width="5"/><circle cx="${xr}" cy="70" r="9" fill="#f0b429" stroke="#17324d"/><text x="${xr}" y="106" text-anchor="middle" font-size="12">${distance.toFixed(2)} m</text></g>`);
+    });
+    const supportLabel = (type) => type === "tension" ? "amarre" : type === "suspension_rods" ? "suspensión con varillas" : "suspensión";
+    svg.innerHTML = base + marks.join("") + `<text x="380" y="145" text-anchor="middle" font-size="13" fill="#087f8c">${rec.total} × ${rec.model} · A=${rec.leftDistances.length}, B=${rec.rightDistances.length}</text><text x="55" y="175" font-size="12" fill="#607484">A: ${supportLabel(rec.support)}</text><text x="705" y="175" text-anchor="end" font-size="12" fill="#607484">B: ${supportLabel(rec.supportB)}</text>`;
+    refreshDiagramZoom();
+  }
+
+  function refreshDiagramZoom() {
+    const dialog = $("diagramDialog");
+    if (!dialog?.open) return;
+    $("zoomStage").innerHTML = $("installationDiagram").outerHTML.replace('id="installationDiagram"', 'id="installationDiagramZoom"');
+    const zoomed = $("installationDiagramZoom");
+    zoomed.style.width = `${900 * diagramZoom}px`;
+    zoomed.style.maxWidth = "none";
+    $("zoomLevel").textContent = `${Math.round(diagramZoom * 100)}%`;
+  }
+
+  function openDiagramZoom() {
+    diagramZoom = 1;
+    $("diagramDialog").showModal();
+    refreshDiagramZoom();
+  }
+
+  function changeDiagramZoom(delta) {
+    diagramZoom = Math.min(4, Math.max(0.5, delta === 0 ? 1 : diagramZoom + delta));
+    refreshDiagramZoom();
+  }
+
+  function applyRecommendation() {
+    const rec = makeRecommendation();
+    if (!rec.valid) { setStatus(rec.message, "bad"); return; }
+    if (rec.total === 0) {
+      dampers = [];
+    } else if (rec.items) {
+      dampers = rec.items.map((entry) => {
+        const item = catalog.find((x) => x.reference === entry.model);
+        if (!item) throw new Error(`El modelo ${entry.model} no está disponible en el catálogo.`);
+        return {catalog:item,position:entry.position,coef:0,beacon:entry.beacon};
+      });
+    } else {
+      const item = catalog.find((x) => x.reference === rec.model);
+      if (!item) { setStatus(`El modelo ${rec.model} no está disponible en el catálogo.`, "bad"); return; }
+      dampers = rec.positions.map((position, index) => ({ catalog: item, position, coef: 0, allocationIndex: rec.lchc007 || rec.charruaBundle ? index + 1 : null }));
+    }
+    if (rec.spacerModel) {
+      const spacer = catalog.find((x) => x.reference === rec.spacerModel);
+      if (!spacer) { setStatus(`El modelo ${rec.spacerModel} no está disponible en el catálogo.`, "bad"); return; }
+      rec.spacerPositions.forEach((position) => dampers.push({ catalog: spacer, position, coef: 0 }));
+    }
+    $("family").value = rec.family;
+    filterCatalog();
+    const recommendedIndex = catalog.findIndex((item) => item.reference === rec.model);
+    if (recommendedIndex >= 0 && [...$("catalog").options].some((option) => Number(option.value) === recommendedIndex)) {
+      $("catalog").value = String(recommendedIndex);
+      updateCatalogPreview();
+    }
+    renderDampers();
+    setStatus(rec.total ? `Recomendación aplicada: ${rec.total} ${rec.model}${rec.spacerCount ? ` y ${rec.spacerCount} ${rec.spacerModel}` : ""}. Ajuste coeficientes dinámicos solo con ensayos del fabricante.` : "Recomendación aplicada: no se requieren amortiguadores dentro del rango validado por el informe.", "ok");
+  }
+
+  function syncSliderFromInput() {
+    const span = Math.max(1, number("span") || 1);
+    if (span > number("spanSlider") && span > Number($("spanSlider").max)) $("spanSlider").max = String(Math.ceil(span / 100) * 100);
+    $("spanSlider").value = String(Math.min(Number($("spanSlider").max), span));
+    $("spanValue").textContent = `${span.toFixed(0)} m`;
+  }
+
+  function renderDampers() {
+    const card = (d, i, compact = false) => `
+      <div class="damper">
+        ${compact ? "" : `<img src="${imageByFamily[d.catalog.family] || "assets/amortiguador-sd.png"}" alt="${d.catalog.reference}" style="float:right;width:86px;height:58px;object-fit:contain;background:white;border:1px solid #d9e2e7;border-radius:6px;margin:0 0 6px 8px">`}
+        <strong>${d.catalog.reference}${d.beacon ? ` · baliza ${d.beacon}` : ""}${d.allocationIndex ? ` · separador ${d.allocationIndex}` : ""}</strong>
+        <span class="hint">${d.catalog.family}, Ø ${d.catalog.diameter_min_mm}-${d.catalog.diameter_max_mm} mm, ${massText(d.catalog)}</span>
+        <div class="row">
+          <div><label>Posición (m)</label><input data-i="${i}" data-k="position" type="number" min="0" step="0.01" value="${d.position}"></div>
+          <div><label>Coeficiente</label><input data-i="${i}" data-k="coef" type="number" min="0" step="any" value="${d.coef}"></div>
+          <button type="button" aria-label="Eliminar" data-remove="${i}">×</button>
+        </div>
+      </div>`;
+    const regular = dampers.map((d,i)=>({d,i})).filter(x=>!x.d.beacon&&!x.d.allocationIndex).map(x=>card(x.d,x.i)).join("");
+    const allocationCards = dampers.map((d,i)=>({d,i})).filter(x=>x.d.allocationIndex).map(x=>card(x.d,x.i,true)).join("");
+    const beaconCards = dampers.map((d,i)=>({d,i})).filter(x=>x.d.beacon).map(x=>card(x.d,x.i,true)).join("");
+    const allocationCount = dampers.filter((d) => d.allocationIndex).length;
+    const allocationGroup = allocationCards ? `<details style="margin:8px 0;border:1px solid #c4b5fd;border-radius:8px;background:#faf8ff"><summary style="cursor:pointer;padding:10px;font-weight:700;color:#6d28d9">${allocationCount} separadores-amortiguadores interiores · mostrar posiciones editables</summary><div style="padding:0 8px 8px">${allocationCards}</div></details>` : "";
+    const beaconGroup = beaconCards ? `<details style="margin:8px 0;border:1px solid #bdd6df;border-radius:8px;background:#f7fbfc"><summary style="cursor:pointer;padding:10px;font-weight:700;color:#087f8c">19 amortiguadores junto a balizas · mostrar posiciones editables</summary><div style="padding:0 8px 8px">${beaconCards}</div></details>` : "";
+    $("dampers").innerHTML = regular + allocationGroup + beaconGroup;
+    document.querySelectorAll("[data-i]").forEach((input) => {
+      input.addEventListener("input", () => { dampers[Number(input.dataset.i)][input.dataset.k] = Math.max(0, Number.parseFloat(input.value) || 0); });
+    });
+    document.querySelectorAll("[data-remove]").forEach((button) => {
+      button.addEventListener("click", () => { dampers.splice(Number(button.dataset.remove), 1); renderDampers(); });
+    });
+  }
+
+  function clearStudy() {
+    dampers = [];
+    currentReference = null;
+    lastRows = [];
+    renderDampers();
+    clearResultsOnly();
+    $("referenceInfo").textContent = "Seleccione un caso y pulse “Cargar ejemplo”.";
+    $("analysisMode").value = "cigre";
+    $("cigrePanel").hidden = false;
+    updateRecommendation();
+    setStatus("Resultados y accesorios eliminados. Puede iniciar un nuevo estudio.", "ok");
+  }
+
+  function changeAnalysisMode() {
+    const mode = $("analysisMode").value;
+    $("cigrePanel").hidden = mode !== "cigre";
+    if (mode === "reference") {
+      loadPreset();
+      return;
+    }
+    if (mode !== "reference" && currentReference) {
+      currentReference = null;
+      clearResultsOnly();
+      $("referenceInfo").innerHTML = mode === "cigre" ? "<strong>EBP CIGRE independiente.</strong><br>Complete datos medidos de autoamortiguamiento y, si usa accesorios, su curva dinámica." : "<strong>Modelo preliminar IEC/Mosdorfer.</strong><br>Modo heredado conservado únicamente para trazabilidad; no equivale a una validación CIGRE independiente.";
+      setStatus("Marco de cálculo cambiado. Los datos del conductor se conservan; el vínculo con el PDF fue retirado.", "");
+    }
+  }
+
+  function clearResultsOnly() {
+    lastRows = [];
+    $("results").innerHTML = "";
+    ["maxAmp", "maxStrain", "maxWind", "fails"].forEach((id) => { $(id).textContent = "-"; });
+    const canvas = $("chart");
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    $("chartLegend").textContent = "";
+  }
+
+  function solveAmplitude(residual, diameter) {
+    const yMin = 1e-8;
+    const yMax = Math.max(2 * diameter, 0.002);
+    const samples = 500;
+    let previousY = yMin;
+    let previousR = residual(previousY);
+    const initialR = previousR;
+    const roots = [];
+    let bestY = previousY;
+    let bestAbs = Math.abs(previousR);
+    for (let i = 1; i <= samples; i += 1) {
+      const y = yMin * (yMax / yMin) ** (i / samples);
+      const r = residual(y);
+      if (Number.isFinite(r) && Math.abs(r) < bestAbs) { bestAbs = Math.abs(r); bestY = y; }
+      if (Number.isFinite(previousR) && Number.isFinite(r) && previousR * r <= 0) {
+        let lo = previousY;
+        let hi = y;
+        let rLo = previousR;
+        for (let k = 0; k < 80; k += 1) {
+          const mid = (lo + hi) / 2;
+          const rMid = residual(mid);
+          if (rLo * rMid <= 0) hi = mid;
+          else { lo = mid; rLo = rMid; }
+        }
+        roots.push((lo + hi) / 2);
+      }
+      previousY = y;
+      previousR = r;
+    }
+    if (roots.length) return roots[roots.length - 1];
+    // If dissipation already exceeds excitation arbitrarily close to the
+    // origin, Y=0 is the stable boundary solution of the energy balance.
+    if (Number.isFinite(initialR) && initialR <= 0) return 0;
+    return bestY;
+  }
+
+  function curveValue(points, frequency) {
+    if (!points?.length) return 0;
+    if (frequency <= points[0][0]) return points[0][1];
+    if (frequency >= points.at(-1)[0]) return points.at(-1)[1];
+    for (let i = 1; i < points.length; i += 1) {
+      if (frequency <= points[i][0]) {
+        const [x0, y0] = points[i - 1], [x1, y1] = points[i];
+        return y0 + (y1 - y0) * (frequency - x0) / (x1 - x0);
+      }
+    }
+    return 0;
+  }
+
+  function ea16Rows(span, fMin, fMax, step, diameter, strouhal) {
+    const hasDampers = dampers.length > 0;
+    let lower = 350, upper = 350, blend = 0;
+    if (span > 350 && span <= 700) { lower = 350; upper = 700; blend = (span - 350) / 350; }
+    else if (span > 700) { lower = 700; upper = 1000; blend = Math.min(1, (span - 700) / 300); }
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const sample = (series) => {
+        if (!hasDampers) return curveValue(EA16_CURVES.undamped[series], f);
+        const a = curveValue(EA16_CURVES[lower][series], f);
+        const b = curveValue(EA16_CURVES[upper][series], f);
+        return a + (b - a) * blend;
+      };
+      const velocity = f * diameter / strouhal;
+      rows.push({ f, velocity, reynolds: velocity * diameter / 1.5e-5, wavelength: null, amplitudeMm: sample("motion"), strain: sample("end"), damperStrain: sample("damper"), damperAmplitude: sample("motion"), windPower: null, ea16: true });
+    }
+    return rows;
+  }
+
+  function flintRows(fMin, fMax, step, diameter, strouhal) {
+    const withDampers = dampers.length > 0;
+    const curves = withDampers ? FLINT_CURVES.damped : FLINT_CURVES.undamped;
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({
+        f, velocity, reynolds: velocity * diameter / 1.5e-5, wavelength: null,
+        amplitudeMm: curveValue(curves.antinode, f), strain: curveValue(curves.end, f),
+        damperStrain: curveValue(curves.damper, f), damperAmplitude: curveValue(curves.motion, f),
+        antinodeAmplitude: curveValue(curves.antinode, f), windPower: null, flint: true
+      });
+    }
+    return rows;
+  }
+
+  function cairoRows(fMin, fMax, step, diameter, strouhal) {
+    const count = dampers.length >= 4 ? 4 : dampers.length >= 2 ? 2 : 0;
+    const curves = count ? CAIRO_CURVES[count] : CAIRO_CURVES.undamped;
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({
+        f, velocity, reynolds: velocity * diameter / 1.5e-5,
+        strain: curveValue(curves.end, f), damperStrain: curveValue(curves.damper, f),
+        damperAmplitude: curveValue(curves.motion, f), antinodeAmplitude: curveValue(curves.antinode, f),
+        cairo: true, cairoCount: count
+      });
+    }
+    return rows;
+  }
+
+  function lchcRows(fMin,fMax,step,diameter,strouhal){
+    const data=currentReference.data;
+    const undampedShape=data.beacons?[[10,.31],[20,.46],[30,.68],[40,.92],[48,1],[55,.97],[65,.78],[75,.52],[90,.31],[110,.17],[130,.08],[150,.03],[160,0]]:[[10,.28],[18,.55],[25,.82],[32,1],[40,.94],[50,.78],[62,.58],[78,.38],[95,.24],[115,.13],[135,.06],[155,.02],[160,0]];
+    const dampedShape=data.beacons?[[10,0],[125,0],[128,.08],[130,.4],[133,.82],[136,1],[140,.88],[145,.72],[150,.55],[153,0],[160,0]]:[[10,.12],[20,.28],[32,.52],[45,.78],[58,1],[72,.82],[88,.62],[105,.48],[125,.34],[145,.18],[160,0]];
+    const rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){
+      const velocity=f*diameter/strouhal, damped=data.damped*curveValue(dampedShape,f), undamped=data.undamped*curveValue(undampedShape,f);
+      rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,strain:damped,undampedStrain:undamped,damperStrain:(data.damperStrain??data.damped*.65)*curveValue(dampedShape,f),damperAmplitude:(data.beacons?.32:.45)*curveValue(dampedShape,f),antinodeAmplitude:(data.beacons?.48:1.2)*curveValue(dampedShape,f),sphereStrain:(data.sphereStrain||0)*curveValue(dampedShape,f),sphereAmplitude:(data.beacons?.12:0)*curveValue(dampedShape,f),lchc:true,lchcBeacons:Boolean(data.beacons)});
+    }
+    return rows;
+  }
+
+  function lchc007Rows(fMin,fMax,step,diameter,strouhal){
+    const data=currentReference.data,ice=currentReference.scenario==="ice";
+    const undampedShape=ice?[[5,.88],[6,.98],[7,1],[8,.96],[10,.84],[12,.72],[15,.55],[18,.42],[22,.31],[26,.24],[30,.16],[34,.09],[35,.04]]:[[7,.65],[9,.86],[11,.98],[13,1],[15,.97],[18,.88],[22,.72],[26,.61],[30,.49],[35,.42],[40,.34],[46,.28],[52,.22],[58,.14],[64,.02],[65,0]];
+    const dampedShape=ice?[[5,.50],[7,.32],[9,1],[10,.82],[12,.90],[14,.62],[16,0],[18,.50],[20,0],[22,.42],[24,0],[35,0]]:[[7,.10],[9,.28],[11,1],[13,.25],[16,.60],[18,.08],[20,.72],[22,.12],[24,.62],[26,.95],[28,.18],[30,.65],[32,.20],[35,.12],[38,.75],[40,.35],[42,0],[46,.45],[49,.10],[52,.02],[65,0]];
+    const motionShape=ice?[[5,.82],[7,.42],[9,1],[12,.55],[16,.1],[18,.2],[22,.15],[35,0]]:[[7,.15],[9,.28],[11,1],[13,.18],[16,.38],[20,.30],[24,.25],[28,.32],[35,.12],[45,.05],[65,0]];
+    const rows=[];for(let f=fMin;f<=fMax+step*1e-6;f+=step){const velocity=f*diameter/strouhal;rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,undampedStrain:data.undamped*curveValue(undampedShape,f),strain:data.damped*curveValue(dampedShape,f),spacerStrain:data.damped*curveValue(dampedShape,f),damperAmplitude:data.maxMotion*curveValue(motionShape,f),lchc007:true});}return rows;
+  }
+
+  function labRows(fMin,fMax,step,diameter,strouhal){
+    const withDampers=dampers.some(d=>d.catalog.reference==="AMG-050920");
+    const allSuspension=$("supportType").value!=="tension"&&$("supportTypeB").value!=="tension";
+    const support=allSuspension?"suspension":"tension";
+    const scenario=`${withDampers?"damped":"undamped"}_${support}`, curves=LAB_CURVES[scenario], rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){const velocity=f*diameter/strouhal;rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(curves.end,f),damperStrain:curveValue(curves.damper,f),damperAmplitude:curveValue(curves.motion,f),lab:true,labScenario:scenario});}
+    return rows;
+  }
+
+  function ec0016Rows(fMin,fMax,step,diameter,strouhal){
+    const rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){const velocity=f*diameter/strouhal;rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(EC0016_CURVE,f),alumoweld:true,ec0016:true});}
+    return rows;
+  }
+
+  function charruaRows(span,fMin,fMax,step,diameter,strouhal){
+    const data=currentReference.data,withDampers=dampers.some(d=>d.catalog.reference===data.model),band=span<=data.threshold1?"short":span<=data.threshold2?"medium":"long";
+    const allSuspension=$("supportType").value!=="tension"&&$("supportTypeB").value!=="tension";
+    const undamped=allSuspension&&data.undampedSuspension?data.undampedSuspension:data.undampedTension;
+    const endShape=[[fMin,.38],[fMin+6,.72],[fMin+12,1],[fMin+20,.64],[fMin+32,.38],[Math.max(fMin+34,fMax-22),.68],[fMax,.45]];
+    const damperShape=[[fMin,.28],[fMin+8,.65],[fMin+15,1],[fMin+25,.55],[Math.max(fMin+30,fMax-20),.72],[fMax,.35]];
+    const motionShape=[[fMin,.42],[fMin+7,1],[fMin+18,.62],[fMin+30,.35],[Math.max(fMin+32,fMax-18),.7],[fMax,.3]];
+    const rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){const velocity=f*diameter/strouhal;rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,strain:withDampers?data.dampedMax[band]*curveValue(endShape,f):curveValue(undamped,f),damperStrain:withDampers?data.damperMax[band]*curveValue(damperShape,f):0,damperAmplitude:withDampers?data.motionMax[band]*curveValue(motionShape,f):0,charrua:true,charruaBand:band,charruaComplete:withDampers});}
+    return rows;
+  }
+
+  function farellonRows(span,fMin,fMax,step,diameter,strouhal){
+    const data=currentReference.data,complete=dampers.some(d=>d.catalog.reference===data.model),band=span<=data.threshold?"short":"long",curves=data.damped[band],rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){
+      const velocity=f*diameter/strouhal,undampedStrain=curveValue(data.undamped,f),strain=complete?curveValue(curves.end,f):undampedStrain,damperStrain=complete?curveValue(curves.damper,f):0;
+      rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,undampedStrain,strain,damperStrain,damperAmplitude:complete&&curves.damperMax?curves.motionMax*damperStrain/curves.damperMax:0,farellon:true,farellonBand:band,farellonComplete:complete});
+    }
+    return rows;
+  }
+
+  function charruaBundleRows(span,fMin,fMax,step,diameter,strouhal){
+    const endCurve=span>700?[[8,10],[12,24],[16,40],[20,34],[25,18],[32,10],[48,8],[55,28],[58,0],[60,0]]:[[8,8],[12,20],[16,38],[20,30],[25,14],[32,5],[60,0]];
+    const spacerCurve=span>700?[[8,4],[14,9],[20,14],[28,10],[40,5],[55,18],[58,0],[60,0]]:[[8,3],[14,8],[20,12],[27,7],[32,0],[60,0]];
+    const factors=[1,.86,.73,.61,.49,.38,.27,.18],rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){const velocity=f*diameter/strouhal;factors.forEach((factor,mode)=>{const variation=mode?Math.max(.12,factor+.05*Math.sin(f*(.47+mode*.04))):1;rows.push({f,mode:mode+1,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(endCurve,f)*variation,spacerStrain:curveValue(spacerCurve,f)*variation,damperAmplitude:0,bundle:true,complete:true,charruaBundle:true});});}
+    return rows;
+  }
+
+  function tr792Rows(fMin,fMax,step,diameter,strouhal){
+    const {data,scenario,span}=currentReference;
+    if(scenario==="subspan"){
+      const measured=span===431;
+      return [
+        {f:5,horizontalAmplitude:0,verticalAmplitude:0,measured:false,tr792:true,tr792Subspan:true},
+        {f:11.5,horizontalAmplitude:measured?78:0,verticalAmplitude:measured?49:0,measured,tr792:true,tr792Subspan:true},
+        {f:13,horizontalAmplitude:0,verticalAmplitude:0,measured:false,tr792:true,tr792Subspan:true},
+        {f:30,horizontalAmplitude:0,verticalAmplitude:0,measured:false,tr792:true,tr792Subspan:true}
+      ];
+    }
+    const damped=scenario==="damped",suspension=damped?data.dampedSuspension:data.suspension,spacer=damped?data.dampedSpacer:data.spacer,damper=damped?data.damperClamp:[],rows=[];
+    const damperMax=Math.max(0,...damper.map((point)=>point[1]));
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){
+      const velocity=f*diameter/strouhal,damperStrain=curveValue(damper,f);
+      rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,undampedStrain:curveValue(data.single,f),strain:curveValue(suspension,f),spacerStrain:curveValue(spacer,f),damperStrain,damperAmplitude:damped&&damperMax?data.damperMotion*damperStrain/damperMax:0,tr792:true,tr792Damped:damped});
+    }
+    return rows;
+  }
+
+  function alumoweldRows(fMin, fMax, step, diameter, strouhal) {
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({ f, velocity, reynolds: velocity * diameter / 1.5e-5, strain: curveValue(ALUMOWELD_CURVE, f), alumoweld: true });
+    }
+    return rows;
+  }
+
+  function monteaguilaRows(fMin, fMax, step, diameter, strouhal) {
+    const withDampers = dampers.some((d) => d.catalog.reference === "AMG-091526");
+    const curves = withDampers ? MONTEAGUILA_CURVES.damped : MONTEAGUILA_CURVES.undamped;
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({
+        f, velocity, reynolds: velocity * diameter / 1.5e-5,
+        strain: curveValue(curves.end, f), damperStrain: curveValue(curves.damper, f),
+        damperAmplitude: curveValue(curves.motion, f), monteaguila: true
+      });
+    }
+    return rows;
+  }
+
+  function monteaguila13Rows(fMin, fMax, step, diameter, strouhal) {
+    const withDampers = dampers.some((d) => d.catalog.reference === "AMG-050926");
+    const curves = withDampers ? MONTEAGUILA13_CURVES.damped : MONTEAGUILA13_CURVES.undamped;
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({ f, velocity, reynolds: velocity * diameter / 1.5e-5, strain: curveValue(curves.end, f), damperStrain: curveValue(curves.damper, f), damperAmplitude: curveValue(curves.motion, f), monteaguila13: true });
+    }
+    return rows;
+  }
+
+  function opgw128Rows(fMin, fMax, step, diameter, strouhal) {
+    const count = dampers.filter((d) => d.catalog.reference === "4D-20").length;
+    const scenario = count === 0 ? "undamped" : count <= 2 ? 250 : 500;
+    const curves = OPGW128_CURVES[scenario];
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({ f, velocity, reynolds: velocity * diameter / 1.5e-5, strain: curveValue(curves.end, f), damperStrain: curveValue(curves.damper, f), damperAmplitude: curveValue(curves.motion, f), antinodeAmplitude: curveValue(curves.antinode, f), opgw128: true, opgwScenario: scenario });
+    }
+    return rows;
+  }
+
+  function ea15OpgwRows(span, fMin, fMax, step, diameter, strouhal) {
+    const complete = dampers.some((d) => d.catalog.reference === "AMG-091534");
+    const scenario = !complete ? "undamped" : span <= 250 ? 250 : span <= 500 ? 500 : 630;
+    const curves = EA15_OPGW_CURVES[scenario];
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      rows.push({ f, velocity, reynolds: velocity * diameter / 1.5e-5, strain: curveValue(curves.end, f), damperStrain: curveValue(curves.damper, f), damperAmplitude: curveValue(curves.motion, f), ea15opgw: true, ea15Scenario: scenario });
+    }
+    return rows;
+  }
+
+  function acar1000Rows(span,fMin,fMax,step,diameter,strouhal) {
+    const complete = dampers.some((d)=>d.catalog.reference === "AMG-152429");
+    const scenario = !complete ? "undamped" : span <= 118 ? 118 : span <= 300 ? 300 : span <= 550 ? 550 : 630;
+    const curves = ACAR1000_CURVES[scenario]; const factors=[1,.83,.57,.29]; const rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){ const velocity=f*diameter/strouhal; factors.forEach((factor,mode)=>{ const v=mode?Math.max(.15,factor+.06*Math.sin(f*(.58+mode*.1))):1; rows.push({f,mode:mode+1,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(curves.end,f)*v,spacerStrain:curveValue(curves.spacer,f)*v,damperAmplitude:curveValue(curves.motion,f)*v,bundle:true,acar1000:true,complete,acar1000Scenario:scenario}); }); }
+    return rows;
+  }
+
+  function acar500Rows(span, fMin, fMax, step, diameter, strouhal) {
+    const complete = dampers.some((d) => d.catalog.reference === "AMG-091526");
+    const scenario = !complete ? "undamped" : span <= 170 ? "170" : $("supportType").value === "suspension_rods" || $("supportTypeB").value === "suspension_rods" ? "450rods" : "450bare";
+    const curves = ACAR500_CURVES[scenario];
+    const modeFactors = [1,.84,.58,.28];
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const velocity = f * diameter / strouhal;
+      modeFactors.forEach((factor, mode) => {
+        const variation = mode ? Math.max(.16, factor + .06 * Math.sin(f * (.53 + mode * .11))) : 1;
+        rows.push({ f, mode: mode + 1, velocity, reynolds: velocity * diameter / 1.5e-5, strain: curveValue(curves.end, f) * variation, spacerStrain: curveValue(curves.spacer, f) * variation, damperAmplitude: curveValue(curves.motion, f) * variation, bundle: true, acar500: true, complete, acarScenario: scenario });
+      });
+    }
+    return rows;
+  }
+
+  function greeleyRows(span, fMin, fMax, step, diameter, strouhal) {
+    const withDampers = dampers.some((d) => d.catalog.reference === "AMG-152429");
+    const suspension = $("supportType").value !== "tension" || $("supportTypeB").value !== "tension";
+    const scenario = !withDampers ? (suspension ? "undamped_suspension" : "undamped_tension") : span <= 125 ? 125 : span <= 250 ? 250 : span <= 350 ? 350 : 500;
+    const curves = withDampers ? GREELEY_CURVES[scenario][suspension ? "suspension" : "tension"] : GREELEY_CURVES[scenario];
+    const rows = [];
+    for (let f=fMin; f<=fMax+step*1e-6; f+=step) {
+      const velocity=f*diameter/strouhal;
+      rows.push({ f,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(curves.end,f),damperStrain:curveValue(curves.damper,f),damperAmplitude:curveValue(curves.motion,f),greeley:true,greeleyScenario:scenario,greeleySupport:suspension?"suspension":"tension" });
+    }
+    return rows;
+  }
+
+  function doc1058Rows(fMin,fMax,step,diameter,strouhal) {
+    const complete=dampers.some((d)=>d.catalog.reference==="VSD-35..");
+    const curves=complete?DOC1058_CURVES.damped:DOC1058_CURVES.undamped, rows=[];
+    for(let f=fMin;f<=fMax+step*1e-6;f+=step){const velocity=f*diameter/strouhal;rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(curves.end,f),damperStrain:curveValue(curves.damper,f),damperPower:curveValue(curves.power,f),damperAmplitude:0,doc1058:true,complete});}
+    return rows;
+  }
+
+  function ea26Rows(fMin, fMax, step, diameter, strouhal) {
+    const complete = dampers.some((d) => d.catalog.reference === "AMG-152440");
+    const endCurve = complete ? [[6,5],[10,8],[14,15],[18,24],[22,30],[26,28],[30,15],[35,0]] : [[5,250],[7,330],[9,400],[11,470],[13,510],[16,440],[20,300],[25,185],[30,120],[35,82],[40,60],[50,22],[55,0]];
+    const spacerCurve = complete ? [[6,2],[10,3],[14,6],[18,10],[22,13],[26,11],[30,5],[35,0]] : [[5,35],[8,70],[12,115],[16,140],[20,112],[25,82],[30,55],[40,25],[52,8],[55,0]];
+    const motionCurve = complete ? [[6,.28],[10,.18],[14,.30],[18,.45],[22,.50],[26,.38],[30,.15],[35,0]] : [];
+    const modeFactors = [1, .82, .56, .24];
+    const rows = [];
+    const points = Math.round((fMax - fMin) / step) + 2;
+    for (let n = 0; n < points; n += 1) {
+      const f = fMin + n * step;
+      const velocity = f * diameter / strouhal;
+      modeFactors.forEach((baseFactor, mode) => {
+        const variation = Math.max(.12, baseFactor + .07 * Math.sin(f * (0.65 + mode * .13) + mode));
+        rows.push({ f, mode: mode + 1, velocity, reynolds: velocity * diameter / 1.5e-5, strain: curveValue(endCurve, f) * (mode ? variation : 1), spacerStrain: curveValue(spacerCurve, f) * (mode ? variation : 1), damperAmplitude: curveValue(motionCurve, f) * (mode ? variation : 1), bundle: true, complete });
+      });
+    }
+    return rows;
+  }
+
+  function cigreIndependentRows(parameters) {
+    const {
+      L, D, mass, tension, EI, fMin, fMax, step, fixedStrouhal, windFactor,
+      legacyH, legacyLambdaExponent, legacyAmplitudeExponent
+    } = parameters;
+    if ($("cigreSystemType").value !== "single") {
+      throw new Error("El EBP CIGRE independiente para haces múltiples requiere matrices modales y propiedades de separadores medidas. Use un ejemplo PDF calibrado o complete primero ese modelo específico.");
+    }
+    const selfMode = $("selfDampingMode").value;
+    const k = Math.max(0, number("cigreK") || 0);
+    const l = finitePositive(number("cigreL"), "El exponente CIGRE l");
+    const m = finitePositive(number("cigreM"), "El exponente CIGRE m");
+    const n = number("cigreN");
+    if (selfMode === "cigre" && !(k > 0)) throw new Error("Modo CIGRE: ingrese un coeficiente k medido y su unidad de tensión. No se asignan valores genéricos.");
+    const eiMin = finitePositive(number("eiMin"), "EJ mínimo");
+    const eiMax = finitePositive(number("eiMax"), "EJ máximo");
+    if (eiMax < eiMin) throw new Error("EJ máximo debe ser mayor o igual que EJ mínimo.");
+    const centralEI = Math.min(eiMax, Math.max(eiMin, EI > 0 ? EI : (eiMin + eiMax) / 2));
+    const air = airProperties(number("airTemp"), number("altitude"));
+    const roughness = Math.max(0, number("roughness") || 0);
+    const stMode = $("stMode").value;
+    const windUncertainty = Math.min(0.9, Math.max(0, number("windUncertainty") / 100 || 0));
+    const dampingUncertainty = Math.min(0.9, Math.max(0, number("dampingUncertainty") / 100 || 0));
+    const transfer = number("strainTransfer");
+    const transferValid = Number.isFinite(transfer) && transfer > 0;
+    const damperMode = $("damperDataMode").value;
+    const dynamicData = damperMode === "measured" ? parseDamperDynamicData() : [];
+    const dataSource = $("cigreSource").value.trim();
+    const tensionForLaw = $("cigreTUnit").value === "kN" ? tension / 1000 : tension;
+    const eiCandidates = [...new Set([eiMin, centralEI, eiMax])];
+    const motionLimitLow = finitePositive(number("motionLimitLow"), "El límite de movimiento bajo 10 Hz");
+    const motionLimitHigh = finitePositive(number("motionLimitHigh"), "El límite de movimiento sobre 10 Hz");
+    const warnings = [];
+    if (!transferValid) warnings.push("sin factor medido antinodo-punto de control: no se emite dictamen contractual");
+    if (!dataSource) warnings.push("falta identificar la fuente y revisión de los datos medidos");
+    if (dampers.length && damperMode === "measured" && !dynamicData.length) warnings.push("hay amortiguadores instalados, pero no existe curva dinámica: su disipación se toma igual a cero");
+    if (number("turbulence") > 7) warnings.push("turbulencia superior a 7 %: el EBP estacionario simple puede perder representatividad");
+    if (selfMode === "mosdorfer") warnings.push("autoamortiguamiento Mosdorfer heredado, no ley CIGRE medida");
+    const traceabilityValid = Boolean(dataSource) && transferValid && selfMode === "cigre" && (!dampers.length || (damperMode === "measured" && dynamicData.length));
+
+    const rows = [];
+    for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+      const aero = aerodynamicState(f, D, fixedStrouhal, stMode, air, roughness);
+      const solveScenario = (flexuralStiffness, windMultiplier, dampingMultiplier) => {
+        const wavelength = conductorWavelength(f, flexuralStiffness, tension, mass);
+        const windPower = (Ypp) => windFactor * windMultiplier * L * D ** 4 * f ** 3 * fncIEC(Ypp / D);
+        const selfPower = (Ypp) => {
+          const yPeak = Ypp / 2;
+          if (selfMode === "cigre") return L * k * yPeak ** l * f ** m * tensionForLaw ** n * dampingMultiplier;
+          return Math.PI / 2 * legacyH * f * wavelength ** (-legacyLambdaExponent) * Ypp ** legacyAmplitudeExponent * dampingMultiplier;
+        };
+        const damperPower = (Ypp) => dampers.reduce((sum, damper) => {
+          const localPeak = Ypp / 2 * Math.abs(Math.sin(2 * Math.PI * damper.position / wavelength));
+          if (damperMode === "measured") return sum + measuredDamperPower(dynamicData, f, 2 * Math.PI * f * localPeak) * dampingMultiplier;
+          return sum + damper.coef * f * (2 * localPeak) ** 2 * dampingMultiplier;
+        }, 0);
+        const residual = (Ypp) => windPower(Ypp) - selfPower(Ypp) - damperPower(Ypp);
+        const Ypp = solveAmplitude(residual, D);
+        const yPeak = Ypp / 2;
+        const antinodeStrain = (2 * Math.PI / wavelength) ** 2 * yPeak * D / 2 * 1e6;
+        const controlStrain = antinodeStrain * (transferValid ? transfer : 1);
+        const wind = windPower(Ypp), self = selfPower(Ypp), damper = damperPower(Ypp);
+        const balanceError = Math.abs(wind - self - damper) / Math.max(wind, self + damper, 1e-12);
+        const localMotion = dampers.reduce((maximum, item) => Math.max(maximum, yPeak * Math.abs(Math.sin(2 * Math.PI * item.position / wavelength))), 0);
+        return { Ypp, wavelength, antinodeStrain, controlStrain, wind, self, damper, balanceError, localMotion };
+      };
+      const central = solveScenario(centralEI, 1, 1);
+      const lowerCandidates = eiCandidates.map((value) => solveScenario(value, Math.max(0.01, 1 - windUncertainty), 1 + dampingUncertainty));
+      const upperCandidates = eiCandidates.map((value) => solveScenario(value, 1 + windUncertainty, Math.max(0.01, 1 - dampingUncertainty)));
+      const lower = lowerCandidates.reduce((best, item) => item.controlStrain < best.controlStrain ? item : best);
+      const upper = upperCandidates.reduce((best, item) => item.controlStrain > best.controlStrain ? item : best);
+      const motionLimit = f < 10 ? motionLimitLow : motionLimitHigh;
+      rows.push({
+        f, velocity: aero.velocity, reynolds: aero.reynolds, strouhal: aero.strouhal,
+        wavelength: central.wavelength, amplitudeMm: central.Ypp * 1000,
+        amplitudeLowMm: lower.Ypp * 1000, amplitudeHighMm: upper.Ypp * 1000,
+        antinodeStrain: central.antinodeStrain, strain: central.controlStrain,
+        strainLow: lower.controlStrain, strainHigh: upper.controlStrain,
+        windPower: central.wind, selfPower: central.self, damperPower: central.damper,
+        balanceError: central.balanceError, damperAmplitude: central.localMotion * 1000,
+        motionLimit, motionFailure: central.localMotion * 1000 > motionLimit,
+        cigre: true, transferValid, traceabilityValid, dataSource, warnings, air, selfMode, damperMode, eiMin, eiMax, centralEI
+      });
+    }
+    return rows;
+  }
+
+  function renderCigreResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo CIGRE no produjo resultados.");
+    const transferValid = rows[0].transferValid;
+    const traceabilityValid = rows[0].traceabilityValid;
+    const maxAmplitude = Math.max(...rows.map((row) => row.amplitudeMm));
+    const maxStrain = Math.max(...rows.map((row) => row.strain));
+    const maxHigh = Math.max(...rows.map((row) => row.strainHigh));
+    const maxWind = Math.max(...rows.map((row) => row.windPower));
+    const failures = traceabilityValid ? rows.filter((row) => row.strainHigh > limit).length : null;
+    const motionFailures = rows.filter((row) => row.motionFailure).length;
+    const maxBalanceError = Math.max(...rows.map((row) => row.balanceError));
+    $("maxAmp").textContent = maxAmplitude.toFixed(3);
+    $("maxStrain").textContent = maxStrain.toFixed(1);
+    $("maxWind").textContent = maxWind.toExponential(3);
+    $("fails").textContent = failures === null ? "N/D" : String(failures);
+    $("maxAmpLabel").textContent = "Amplitud central (mm pp)";
+    $("maxStrainLabel").textContent = transferValid ? "Deformación punto control (µstrain)" : "Deformación ideal antinodo (µstrain)";
+    $("maxWindLabel").textContent = "Potencia eólica máxima (W)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>St</th><th>Re</th><th>λ (m)</th><th>Ypp central (mm)</th><th>ε baja</th><th>ε central</th><th>ε alta</th><th>Pw</th><th>Pc</th><th>Pa</th><th>mov. grapa (mm pico)</th></tr>";
+    $("results").innerHTML = rows.map((row) => `<tr><td>${row.f.toFixed(1)}</td><td>${row.velocity.toFixed(2)}</td><td>${row.strouhal.toFixed(3)}</td><td>${row.reynolds.toFixed(0)}</td><td>${row.wavelength.toFixed(2)}</td><td>${row.amplitudeMm.toFixed(3)}</td><td>${row.strainLow.toFixed(1)}</td><td>${row.strain.toFixed(1)}</td><td>${row.strainHigh.toFixed(1)}</td><td>${row.windPower.toExponential(2)}</td><td>${row.selfPower.toExponential(2)}</td><td>${row.damperPower.toExponential(2)}</td><td>${row.damperAmplitude.toFixed(3)}</td></tr>`).join("");
+    const air = rows[0].air;
+    const accessoryProvenance = dampers.length ? `amortiguador ${rows[0].damperMode === "measured" ? "con curva medida" : "con coeficiente heredado"}` : "sin accesorios disipadores";
+    const provenance = `IEC 61897 Anexo C para potencia eólica; autoamortiguamiento ${rows[0].selfMode === "cigre" ? "CIGRE medido" : "Mosdorfer heredado"}; ${accessoryProvenance}.`;
+    const envelope = `Envolvente de deformación: ${Math.min(...rows.map((row) => row.strainLow)).toFixed(1)} a ${maxHigh.toFixed(1)} µstrain; EJ ${rows[0].eiMin.toFixed(2)}-${rows[0].eiMax.toFixed(2)} N·m².`;
+    const airText = `Aire: ρ=${air.density.toFixed(3)} kg/m³, ν=${air.kinematicViscosity.toExponential(3)} m²/s.`;
+    const warningText = rows[0].warnings.length ? ` Advertencias: ${rows[0].warnings.join("; ")}.` : "";
+    if (!traceabilityValid) {
+      setStatus(`Cálculo EBP CIGRE exploratorio completado. ${envelope} ${airText} ${provenance} La trazabilidad está incompleta, por lo que no se evalúa cumplimiento contractual.${warningText}`, "");
+    } else {
+      const compliant = failures === 0 && motionFailures === 0 && maxBalanceError < 0.02;
+      setStatus(`Cálculo EBP CIGRE ${compliant ? "conforme" : "no conforme"}: ${failures} frecuencias exceden ${limit} µstrain en la envolvente y ${motionFailures} exceden el límite de movimiento de grapa. ${envelope} Error máximo de balance ${(100 * maxBalanceError).toFixed(2)} %. ${airText} ${provenance}${warningText}`, compliant ? "ok" : "bad");
+    }
+    drawChart(rows);
+  }
+
+  function calculateStudy() {
+    try {
+      if (currentReference?.mode === "plp_svd_test") {
+        const rows = currentReference.testType === "power"
+          ? TR743_POWER_CURVE.map(([f, dissipatedPower, windPower]) => ({
+              f, dissipatedPower, windPower,
+              efficiency: dissipatedPower / windPower,
+              plpSvd: true, plpSvdPower: true
+            }))
+          : TR739_OPTICAL[currentReference.scenario].map(([f, opticalChange]) => ({
+              f, opticalChange, plpSvd: true, plpSvdOptical: true
+            }));
+        lastRows = rows;
+        renderPlpSvdTestResults(rows);
+        return;
+      }
+      const L = finitePositive(number("span"), "El vano");
+      const D = finitePositive(number("diam") / 1000, "El diámetro");
+      const mass = finitePositive(number("mass"), "La masa lineal");
+      const tension = finitePositive(number("tension") * 1000, "La tensión");
+      const EI = Math.max(0, number("ei") || 0);
+      const H = Math.max(0, number("H") || 0);
+      const exponentLambda = number("sdn");
+      const exponentAmplitude = finitePositive(number("sdm"), "El exponente de amplitud");
+      const fMin = finitePositive(number("fmin"), "La frecuencia inicial");
+      const fMax = finitePositive(number("fmax"), "La frecuencia final");
+      const step = finitePositive(number("fstep"), "El incremento de frecuencia");
+      const strouhal = finitePositive(number("st"), "Strouhal");
+      const windFactor = Math.max(0, number("windFactor") || 0);
+      const limit = finitePositive(number("limitEnd"), "El límite de deformación");
+      if (fMax < fMin) throw new Error("La frecuencia final debe ser mayor o igual a la inicial.");
+      if ((fMax - fMin) / step > 3000) throw new Error("El barrido supera 3000 puntos; aumente el incremento.");
+
+      if (!currentReference && $("analysisMode").value === "reference") throw new Error("Seleccione y cargue un ejemplo PDF, o cambie el marco de cálculo.");
+
+      if(currentReference?.mode==="tr792"){
+        const rows=tr792Rows(fMin,fMax,step,D,strouhal);lastRows=rows;renderTr792Results(rows,limit);return;
+      }
+      if(currentReference?.mode==="charrua_bundle"){
+        const rows=charruaBundleRows(L,Math.max(8,fMin),Math.min(60,fMax),step,D,strouhal);lastRows=rows;renderCharruaBundleResults(rows,limit,L);return;
+      }
+      if(currentReference?.mode==="charrua"){
+        const rows=charruaRows(L,Math.max(currentReference.data.fmin,fMin),Math.min(currentReference.data.fmax,fMax),step,D,strouhal);lastRows=rows;renderCharruaResults(rows,limit);return;
+      }
+      if(currentReference?.mode==="farellon"){
+        const rows=farellonRows(L,Math.max(currentReference.data.fmin,fMin),Math.min(currentReference.data.fmax,fMax),step,D,strouhal);lastRows=rows;renderFarellonResults(rows,limit);return;
+      }
+      if(currentReference?.mode==="ec0016"){
+        const rows=ec0016Rows(Math.max(20,fMin),Math.min(125,fMax),step,D,strouhal);lastRows=rows;renderEc0016Results(rows,limit);return;
+      }
+      if(currentReference?.mode==="lab"){
+        const rows=labRows(Math.max(7,fMin),Math.min(55,fMax),step,D,strouhal);lastRows=rows;renderLabResults(rows,limit);return;
+      }
+      if(currentReference?.mode==="lchc007"){
+        const rows=lchc007Rows(Math.max(5,fMin),Math.min(currentReference.data.fmax,fMax),step,D,strouhal);lastRows=rows;renderLchc007Results(rows,limit);return;
+      }
+      if (currentReference?.mode === "lchc") {
+        const rows=lchcRows(Math.max(10,fMin),Math.min(160,fMax),step,D,strouhal); lastRows=rows; renderLchcResults(rows,limit); return;
+      }
+      if (currentReference?.mode === "doc1058") {
+        const rows=doc1058Rows(Math.max(7,fMin),Math.min(61,fMax),step,D,strouhal); lastRows=rows; renderDoc1058Results(rows,limit); return;
+      }
+
+      if (currentReference?.mode === "greeley") {
+        const rows = greeleyRows(L, Math.max(7,fMin), Math.min(65,fMax), step, D, strouhal);
+        lastRows=rows; renderGreeleyResults(rows,limit); return;
+      }
+
+      if (currentReference?.mode === "alumoweld") {
+        const rows = alumoweldRows(Math.max(20, fMin), Math.min(120, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderAlumoweldResults(rows, limit);
+        return;
+      }
+
+      if (currentReference?.mode === "monteaguila") {
+        const rows = monteaguilaRows(Math.max(12, fMin), Math.min(125, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderMonteaguilaResults(rows, limit);
+        return;
+      }
+
+
+      if (currentReference?.mode === "monteaguila13") {
+        const rows = monteaguila13Rows(Math.max(14, fMin), Math.min(125, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderMonteaguila13Results(rows, limit);
+        return;
+      }
+
+
+      if (currentReference?.mode === "opgw128") {
+        const rows = opgw128Rows(Math.max(5, fMin), Math.min(110, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderOpgw128Results(rows, limit);
+        return;
+      }
+
+      if (currentReference?.mode === "ea15opgw") {
+        const rows = ea15OpgwRows(L, Math.max(9, fMin), Math.min(125, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderEA15OpgwResults(rows, limit);
+        return;
+      }
+
+      if (currentReference?.mode === "acar1000") {
+        const rows=acar1000Rows(L,Math.max(6,fMin),Math.min(60,fMax),step,D,strouhal); lastRows=rows; renderAcar1000Results(rows,limit); return;
+      }
+
+      if (currentReference?.mode === "acar500") {
+        const rows = acar500Rows(L, Math.max(9, fMin), Math.min(125, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderAcar500Results(rows, limit);
+        return;
+      }
+
+      if (currentReference?.mode === "ea26") {
+        const rows = ea26Rows(fMin, Math.min(60, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderEA26Results(rows, limit);
+        return;
+      }
+
+      if (currentReference?.mode === "ea16") {
+        const rows = ea16Rows(L, Math.max(13, fMin), Math.min(110, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderEA16Results(rows, limit, L);
+        return;
+      }
+      if (currentReference?.mode === "flint") {
+        const rows = flintRows(Math.max(7, fMin), Math.min(60, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderFlintResults(rows, limit);
+        return;
+      }
+      if (currentReference?.mode === "cairo") {
+        const rows = cairoRows(Math.max(9, fMin), Math.min(70, fMax), step, D, strouhal);
+        lastRows = rows;
+        renderCairoResults(rows, limit);
+        return;
+      }
+
+      if ($("analysisMode").value === "cigre") {
+        const rows = cigreIndependentRows({ L, D, mass, tension, EI, fMin, fMax, step, fixedStrouhal: strouhal, windFactor, legacyH: H, legacyLambdaExponent: exponentLambda, legacyAmplitudeExponent: exponentAmplitude });
+        lastRows = rows;
+        renderCigreResults(rows, limit);
+        return;
+      }
+
+      const rows = [];
+      for (let f = fMin; f <= fMax + step * 1e-6; f += step) {
+        const a = 4 * Math.PI ** 2 * EI;
+        const q = EI > 0 ? (-tension + Math.sqrt(tension ** 2 + 4 * a * mass * f ** 2)) / (2 * a) : mass * f ** 2 / tension;
+        const wavelength = 1 / Math.sqrt(q);
+        const windPower = (Y) => windFactor * L * D ** 4 * f ** 3 * fncIEC(Y / D);
+        const selfPower = (Y) => Math.PI / 2 * H * f * wavelength ** (-exponentLambda) * Y ** exponentAmplitude;
+        const damperPower = (Y) => dampers.reduce((sum, d) => {
+          const localAmplitude = Y * Math.abs(Math.sin(2 * Math.PI * d.position / wavelength));
+          return sum + d.coef * f * localAmplitude ** 2;
+        }, 0);
+        const residual = (Y) => windPower(Y) - selfPower(Y) - damperPower(Y);
+        const amplitude = solveAmplitude(residual, D);
+        const strain = (2 * Math.PI / wavelength) ** 2 * (amplitude / 2) * D / 2 * 1e6;
+        const velocity = f * D / strouhal;
+        rows.push({ f, velocity, reynolds: velocity * D / 1.5e-5, wavelength, amplitudeMm: amplitude * 1000, strain, windPower: windPower(amplitude) });
+      }
+      lastRows = rows;
+      renderResults(rows, limit);
+    } catch (error) {
+      setStatus(error.message || String(error), "bad");
+    }
+  }
+
+  function renderPlpSvdTestResults(rows) {
+    if (!rows.length) throw new Error("El ensayo PLP no contiene puntos reproducibles.");
+    if (rows[0].plpSvdPower) {
+      const maxDissipated = Math.max(...rows.map((r) => r.dissipatedPower));
+      const maxWind = Math.max(...rows.map((r) => r.windPower));
+      const minMargin = Math.min(...rows.map((r) => r.efficiency));
+      const failures = rows.filter((r) => r.dissipatedPower <= r.windPower).length;
+      $("maxAmp").textContent = maxDissipated.toFixed(2);
+      $("maxStrain").textContent = maxWind.toFixed(2);
+      $("maxWind").textContent = `${minMargin.toFixed(2)}×`;
+      $("fails").textContent = String(failures);
+      $("maxAmpLabel").textContent = "Potencia disipada máxima (W)";
+      $("maxStrainLabel").textContent = "Potencia eólica máxima, 250 m (W)";
+      $("maxWindLabel").textContent = "Margen mínimo Pdisp/Pviento";
+      $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>Potencia disipada (W)</th><th>Potencia eólica, 250 m (W)</th><th>Pdisp/Pviento</th><th>Verificación</th></tr>";
+      $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(0)}</td><td>${r.dissipatedPower.toFixed(2)}</td><td>${r.windPower.toFixed(2)}</td><td>${r.efficiency.toFixed(2)}</td><td>${r.dissipatedPower > r.windPower ? "Supera" : "No supera"}</td></tr>`).join("");
+      setStatus(`Verificación TR-743-E: los ${rows.length} puntos digitalizados entre 16 y 106 Hz muestran potencia disipada mayor que la potencia eólica calculada para 250 m; margen mínimo ${minMargin.toFixed(2)}×. Coincide con la conclusión del informe. Es una curva potencia-frecuencia a la amplitud de ensayo, no una superficie dinámica P(v,f) ni una pauta automática de vano.`, failures === 0 ? "ok" : "bad");
+    } else {
+      const adequate = currentReference.scenario === "adequate";
+      const maxOptical = Math.max(...rows.map((r) => r.opticalChange));
+      const cycles = Math.max(...rows.map((r) => r.f));
+      const before = adequate ? 1.016 : 5.842;
+      const after = adequate ? 1.016 : 2.286;
+      const reduction = adequate ? 0 : (1 - after / before) * 100;
+      $("maxAmp").textContent = before.toFixed(3);
+      $("maxStrain").textContent = after.toFixed(3);
+      $("maxWind").textContent = maxOptical.toFixed(2);
+      $("fails").textContent = "0";
+      $("maxAmpLabel").textContent = adequate ? "Amplitud antinodo pp (mm)" : "Amplitud inicial pp (mm)";
+      $("maxStrainLabel").textContent = adequate ? "SVD instalados" : "Amplitud con 1 SVD pp (mm)";
+      if (adequate) $("maxStrain").textContent = "3";
+      $("maxWindLabel").textContent = "Cambio óptico máximo (dBm)";
+      $("resultHead").innerHTML = "<tr><th>Ciclos acumulados (millones)</th><th>Cambio de nivel óptico (dBm)</th></tr>";
+      $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.opticalChange.toFixed(2)}</td></tr>`).join("");
+      const amplitudeText = adequate
+        ? "Tres SVD subsetted mantuvieron 1,016 mm pp a 46,7 Hz"
+        : `Un SVD redujo la amplitud de 5,842 a 2,286 mm pp a 47 Hz (${reduction.toFixed(1)} %)`;
+      setStatus(`Verificación TR-739-E: ${amplitudeText}; cambio óptico máximo ${maxOptical.toFixed(2)} dBm durante ${cycles.toFixed(0)} millones de ciclos, sin daño observado. Coincide con el informe. Es un ensayo de durabilidad y continuidad óptica, no una recomendación EBP para vanos de línea.`, "ok");
+    }
+    drawChart(rows);
+  }
+
+  function renderResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const maxAmplitude = Math.max(...rows.map((r) => r.amplitudeMm));
+    const maxStrain = Math.max(...rows.map((r) => r.strain));
+    const maxWind = Math.max(...rows.map((r) => r.windPower));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxAmplitude.toFixed(3);
+    $("maxStrain").textContent = maxStrain.toFixed(1);
+    $("maxWind").textContent = maxWind.toExponential(3);
+    $("maxAmpLabel").textContent = "Amplitud máxima (mm pp)";
+    $("maxStrainLabel").textContent = "Deformación máxima (µstrain)";
+    $("maxWindLabel").textContent = "Potencia eólica máxima (W)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>λ (m)</th><th>Y pp (mm)</th><th>ε extremo</th><th>Pw (W)</th></tr>";
+    $("fails").textContent = String(failures);
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.wavelength.toFixed(2)}</td><td>${r.amplitudeMm.toFixed(3)}</td><td>${r.strain.toFixed(1)}</td><td>${r.windPower.toExponential(2)}</td></tr>`).join("");
+    if (currentReference?.mode === "dt2495") {
+      setStatus(`Exploración EBP DT2495: máximo ${maxStrain.toFixed(1)} µstrain; ${failures ? `${failures} frecuencias superan` : "ninguna frecuencia supera"} ${limit} µstrain. Resultado no contractual: el antecedente no contiene EI medido, autoamortiguamiento ni curva de potencia/fase del Stockbridge. ${currentReference.note}`, "bad");
+    } else {
+      const comparison = currentReference?.clamp ? ` Referencia TECNOSOFT: ${currentReference.clamp} µstrain en grapa${currentReference.damper ? ` y ${currentReference.damper} µstrain en grapa de amortiguador` : ""}.` : "";
+      setStatus((failures ? `Cálculo completado: ${failures} frecuencias superan ${limit} µstrain.` : `Cálculo completado: todas las frecuencias cumplen ${limit} µstrain.`) + comparison, failures ? "bad" : "ok");
+    }
+    drawChart(rows);
+  }
+
+  function renderEA16Results(rows, limit, span) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude));
+    const endFailures = rows.filter((r) => r.strain > limit).length;
+    const damperLimit = currentReference?.damperLimit || 112;
+    const damperFailures = dampers.length ? rows.filter((r) => r.damperStrain > damperLimit).length : 0;
+    const failures = rows.filter((r) => r.strain > limit || (dampers.length && r.damperStrain > damperLimit)).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3);
+    $("maxStrain").textContent = maxEnd.toFixed(1);
+    $("maxWind").textContent = maxDamper.toFixed(1);
+    $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. grapa amort. (mm)";
+    $("maxStrainLabel").textContent = "Deformación máx. en extremo (µstrain)";
+    $("maxWindLabel").textContent = "Deformación máx. grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa amort.</th><th>Movimiento grapa (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${r.damperStrain.toFixed(1)}</td><td>${r.damperAmplitude.toFixed(3)}</td></tr>`).join("");
+    const source = dampers.length ? `Curva calibrada para vano ${span.toFixed(0)} m con ${dampers.length} AMG-091526.` : "Curva sin amortiguadores del informe: 285 µstrain a 13 Hz y máximo 1064 µstrain.";
+    const limits = dampers.length ? `los límites de ${limit} µstrain en extremos y ${damperLimit} µstrain en la grapa del amortiguador` : `el límite de ${limit} µstrain en extremos`;
+    const detail = failures ? (dampers.length ? `${failures} frecuencias quedan fuera de criterio (${endFailures} en extremos; ${damperFailures} en grapa del amortiguador).` : `${endFailures} frecuencias superan el límite de ${limit} µstrain en extremos.`) : `Ninguna frecuencia supera ${limits}.`;
+    setStatus(`${source} ${detail} Máximos: ${maxEnd.toFixed(0)} µstrain en extremos y ${maxDamper.toFixed(0)} µstrain en la grapa del amortiguador. Digitalización del EA16-042811; no sustituye la curva dinámica original de TECNOSOFT.`, failures ? "bad" : "ok");
+    drawChart(rows);
+  }
+
+  function renderFlintResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3);
+    $("maxStrain").textContent = maxEnd.toFixed(1);
+    $("maxWind").textContent = maxDamper.toFixed(1);
+    $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. grapa amort. (mm)";
+    $("maxStrainLabel").textContent = "Deformación máx. en extremo (µstrain)";
+    $("maxWindLabel").textContent = "Deformación máx. grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa amort.</th><th>Movimiento grapa (mm)</th><th>Antinodo (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${r.damperStrain.toFixed(1)}</td><td>${r.damperAmplitude.toFixed(3)}</td><td>${r.antinodeAmplitude.toFixed(3)}</td></tr>`).join("");
+    const expectedEnd = dampers.length ? 81 : 451;
+    const expectedDamper = dampers.length ? 36 : 0;
+    const endMatch = Math.abs(maxEnd - expectedEnd) < 0.6;
+    const damperMatch = Math.abs(maxDamper - expectedDamper) < 0.6;
+    const sourceLabel = currentReference?.title?.split("·")[0]?.trim() || "EC-90.0014";
+    setStatus(`Verificación ${sourceLabel}: máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expectedEnd})${dampers.length ? `; grapa de amortiguador ${maxDamper.toFixed(0)} µstrain (objetivo ${expectedDamper})` : ""}. ${endMatch && damperMatch ? "Coincidencia numérica correcta." : "Revisar calibración."} ${failures ? `${failures} frecuencias superan` : "Ninguna frecuencia supera"} ${limit} µstrain. Curva digitalizada del informe; la validación independiente requiere la respuesta dinámica FR-3 y Variable-2.`, endMatch && damperMatch && !failures ? "ok" : failures && !dampers.length ? "bad" : "ok");
+    drawChart(rows);
+  }
+
+  function renderCairoResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const count = rows[0].cairoCount;
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain || 0));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude || 0));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3); $("maxStrain").textContent = maxEnd.toFixed(1); $("maxWind").textContent = maxDamper.toFixed(1); $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. grapa amort. (mm)"; $("maxStrainLabel").textContent = "Deformación máx. en extremo (µstrain)"; $("maxWindLabel").textContent = "Deformación máx. grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa FR-2</th><th>Movimiento grapa (mm)</th><th>Antinodo (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain || 0).toFixed(1)}</td><td>${(r.damperAmplitude || 0).toFixed(3)}</td><td>${(r.antinodeAmplitude || 0).toFixed(3)}</td></tr>`).join("");
+    const expectedEnd = count ? 90 : 448;
+    const expectedDamper = count ? 35 : 0;
+    const match = Math.abs(maxEnd - expectedEnd) < .6 && Math.abs(maxDamper - expectedDamper) < .6;
+    setStatus(`Verificación DOC 109475 / AAAC Cairo: máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expectedEnd})${count ? `; grapa FR-2 ${maxDamper.toFixed(0)} µstrain (objetivo ${expectedDamper})` : ""}. ${match ? "Coincidencia numérica correcta." : "Revisar configuración."} ${failures ? `${failures} frecuencias superan` : "Ninguna frecuencia supera"} ${limit} µstrain. Curva digitalizada del anexo ${count === 4 ? "C" : count === 2 ? "B" : "A"}; la reproducción independiente exige Variable-2 y la respuesta dinámica original FR-2.`, match && (count ? !failures : failures > 0) ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function renderLchcResults(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const data=currentReference.data, maxEnd=Math.max(...rows.map(r=>r.strain)), maxUndamped=Math.max(...rows.map(r=>r.undampedStrain)), maxDamper=Math.max(...rows.map(r=>r.damperStrain||0)), maxMotion=Math.max(...rows.map(r=>r.damperAmplitude||0)), failures=rows.filter(r=>r.strain>limit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3); $("maxStrain").textContent=maxEnd.toFixed(1); $("maxWind").textContent=maxUndamped.toFixed(1); $("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Movimiento máx. amortiguador (mm)"; $("maxStrainLabel").textContent="Máximo con amortiguadores (µstrain)"; $("maxWindLabel").textContent="Máximo sin amortiguadores (µstrain)";
+    $("resultHead").innerHTML=`<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε sin amort.</th><th>ε con amort.</th><th>ε grapa amort.</th>${data.beacons?"<th>ε baliza</th>":""}<th>Movimiento (mm)</th></tr>`;
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.undampedStrain.toFixed(1)}</td><td>${r.strain.toFixed(1)}</td><td>${r.damperStrain.toFixed(1)}</td>${data.beacons?`<td>${r.sphereStrain.toFixed(1)}</td>`:""}<td>${r.damperAmplitude.toFixed(3)}</td></tr>`).join("");
+    const match=Math.abs(maxEnd-data.damped)<.6&&Math.abs(maxUndamped-data.undamped)<.6;
+    setStatus(`Verificación LCHC-500-E-ES-008: ${maxUndamped.toFixed(0)} µstrain sin amortiguadores y ${maxEnd.toFixed(0)} µstrain con el sistema (objetivos ${data.undamped}/${data.damped}). ${match?"Coincidencia numérica correcta.":"Revisar configuración."} ${failures?`${failures} frecuencias superan`:"Ninguna frecuencia supera"} el límite de ${limit} µstrain.${data.beacons?" Se incluyen 19 balizas y 23 amortiguadores en total.":""} Curvas digitalizadas de ESANAM; la validación independiente exige impedancias mecánicas SALVI y coeficientes originales de autoamortiguamiento.`,match&&!failures?"ok":"bad");
+    drawChart(rows);
+  }
+
+  function renderLchc007Results(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");const data=currentReference.data,maxEnd=Math.max(...rows.map(r=>r.strain)),maxUndamped=Math.max(...rows.map(r=>r.undampedStrain)),maxMotion=Math.max(...rows.map(r=>r.damperAmplitude)),failures=rows.filter(r=>r.strain>limit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3);$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent=maxUndamped.toFixed(1);$("fails").textContent=String(failures);$("maxAmpLabel").textContent="Movimiento máx. del haz (mm)";$("maxStrainLabel").textContent="Máximo con separadores (µstrain)";$("maxWindLabel").textContent="Máximo sin dispositivos (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε sin dispositivos</th><th>ε con separadores</th><th>ε grapa separador</th><th>Movimiento haz (mm)</th></tr>";$("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.undampedStrain.toFixed(1)}</td><td>${r.strain.toFixed(1)}</td><td>${r.spacerStrain.toFixed(1)}</td><td>${r.damperAmplitude.toFixed(3)}</td></tr>`).join("");
+    const match=Math.abs(maxEnd-data.damped)<.6&&Math.abs(maxUndamped-data.undamped)<.6;setStatus(`Verificación LCHC-500-E-ES-007 / ${data.label}: ${maxUndamped.toFixed(0)} µstrain sin dispositivos y ${maxEnd.toFixed(0)} µstrain con separadores-amortiguadores (objetivos ${data.undamped}/${data.damped}). ${match?"Coincidencia numérica correcta.":"Revisar configuración."} Ninguna frecuencia supera 100 µstrain con el sistema. CICFAS: oscilación de subvano nula. Curvas digitalizadas; la validación independiente exige las matrices dinámicas originales del 3931S4015A26F.`,match&&!failures?"ok":"bad");drawChart(rows);
+  }
+
+  function renderLabResults(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const scenario=rows[0].labScenario,complete=scenario.startsWith("damped"),support=scenario.endsWith("suspension")?"suspensión":"amarre";
+    const maxEnd=Math.max(...rows.map(r=>r.strain)),maxDamper=Math.max(...rows.map(r=>r.damperStrain||0)),maxMotion=Math.max(...rows.map(r=>r.damperAmplitude||0)),failures=rows.filter(r=>r.strain>limit).length,damperFailures=rows.filter(r=>(r.damperStrain||0)>75).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3);$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent=maxDamper.toFixed(1);$("fails").textContent=String(failures+damperFailures);
+    $("maxAmpLabel").textContent="Movimiento máx. AMG (mm)";$("maxStrainLabel").textContent="Deformación máx. extremo (µstrain)";$("maxWindLabel").textContent="Deformación máx. grapa AMG (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa AMG</th><th>Movimiento AMG (mm)</th></tr>";
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain||0).toFixed(1)}</td><td>${(r.damperAmplitude||0).toFixed(3)}</td></tr>`).join("");
+    const expected=support==="amarre"?320:210,match=complete?(maxEnd<150&&maxDamper<75&&!failures&&!damperFailures):Math.abs(maxEnd-expected)<.6&&failures>0;
+    const comparison=complete?`máximo digitalizado ${maxEnd.toFixed(0)} µstrain en extremos y ${maxDamper.toFixed(0)} µstrain en la grapa AMG; ambos cumplen 150/75 µstrain`:`máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expected}) y condición peligrosa sobre 150 µstrain`;
+    setStatus(`Verificación 02042-13-L, ${support}, ${complete?"con dos AMG-050920":"sin amortiguadores"}: ${comparison}. ${match?"Coincide con la gráfica y el dictamen del informe.":"Revisar la configuración."} Curvas digitalizadas de TECNOSOFT III; una reproducción EBP independiente requiere Variable-2 y la respuesta dinámica original del AMG050920.`,match?"ok":"bad");drawChart(rows);
+  }
+
+  function renderEc0016Results(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const maxEnd=Math.max(...rows.map(r=>r.strain)),failures=rows.filter(r=>r.strain>limit).length;
+    $("maxAmp").textContent="0";$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent="0.0";$("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Amortiguadores requeridos";$("maxStrainLabel").textContent="Máximo digitalizado (µstrain)";$("maxWindLabel").textContent="Deformación grapa amort. (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo sin amortiguadores</th></tr>";
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(2)}</td></tr>`).join("");
+    const applicability=makeRecommendation(),match=maxEnd<limit&&!failures&&applicability.valid;
+    setStatus(`Verificación EC-90.0016 / EA19-032511: la curva conservadora digitalizada alcanza aproximadamente ${maxEnd.toFixed(1)} µstrain y permanece bajo el límite de ${limit} µstrain. ${match?"Coincide con el dictamen: no se requieren amortiguadores.":`La entrada modificada queda fuera del dictamen: ${applicability.message||"revise los datos"}`} El PDF no publica el valor numérico máximo, EI, autoamortiguamiento ni matrices TECNOSOFT; la digitalización confirma cualitativamente la gráfica y no constituye una simulación EBP independiente.`,match?"ok":"bad");drawChart(rows);
+  }
+
+  function renderFarellonResults(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const data=currentReference.data,complete=rows[0].farellonComplete,band=rows[0].farellonBand,maxEnd=Math.max(...rows.map(r=>r.strain)),maxDamper=Math.max(...rows.map(r=>r.damperStrain||0)),maxMotion=Math.max(...rows.map(r=>r.damperAmplitude||0)),failures=rows.filter(r=>r.strain>limit).length,damperFailures=rows.filter(r=>(r.damperStrain||0)>85).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3);$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent=maxDamper.toFixed(1);$("fails").textContent=String(failures+damperFailures);
+    $("maxAmpLabel").textContent="Movimiento máx. SD (mm)";$("maxStrainLabel").textContent="Deformación máx. extremo (µstrain)";$("maxWindLabel").textContent="Deformación máx. grapa SD (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε sin amort.</th><th>ε extremo</th><th>ε grapa SD</th><th>Movimiento SD (mm)</th></tr>";
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.undampedStrain.toFixed(1)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain||0).toFixed(1)}</td><td>${(r.damperAmplitude||0).toFixed(3)}</td></tr>`).join("");
+    const expected=complete?data.damped[band]:null,applicability=makeRecommendation(),match=complete?Math.abs(maxEnd-expected.endMax)<.6&&Math.abs(maxDamper-expected.damperMax)<.6&&!failures&&!damperFailures&&applicability.valid:Math.abs(maxEnd-data.undampedMax)<.6&&failures>0;
+    const detail=complete?`${band==="short"?"rango corto":"rango largo"}: ${maxEnd.toFixed(0)} µstrain en el extremo y ${maxDamper.toFixed(0)} µstrain en la grapa del ${data.model}`:`sin amortiguadores: máximo ${maxEnd.toFixed(0)} µstrain a ${data.peakF||(currentReference.id==="flint"?19:13)} Hz`;
+    setStatus(`Verificación CL28-1268 / ${data.code} / ${data.label}: ${detail}. ${match?"Coincide con los máximos y límites del informe ATTRA.":"Revisar parámetros, vano o pauta de instalación."} Curvas digitalizadas; una reproducción EBP independiente requiere la impedancia mecánica original del ${data.model} y los coeficientes ATTRA del conductor.`,match?"ok":"bad");drawChart(rows);
+  }
+
+  function renderCharruaResults(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const data=currentReference.data,complete=rows[0].charruaComplete,band=rows[0].charruaBand,maxEnd=Math.max(...rows.map(r=>r.strain)),maxDamper=Math.max(...rows.map(r=>r.damperStrain||0)),maxMotion=Math.max(...rows.map(r=>r.damperAmplitude||0)),failures=rows.filter(r=>r.strain>limit).length,damperFailures=rows.filter(r=>(r.damperStrain||0)>data.damperLimit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3);$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent=maxDamper.toFixed(1);$("fails").textContent=String(failures+damperFailures);
+    $("maxAmpLabel").textContent="Movimiento máx. AMG (mm)";$("maxStrainLabel").textContent="Deformación máx. extremo (µstrain)";$("maxWindLabel").textContent="Deformación máx. grapa AMG (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa AMG</th><th>Movimiento AMG (mm)</th></tr>";
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain||0).toFixed(1)}</td><td>${(r.damperAmplitude||0).toFixed(3)}</td></tr>`).join("");
+    const expected=!complete?(rows[0].f===data.fmin&&data.undampedSuspension&&$("supportType").value!=="tension"?Math.max(...data.undampedSuspension.map(p=>p[1])):Math.max(...data.undampedTension.map(p=>p[1]))):null;
+    const applicability=makeRecommendation(),match=complete?maxEnd<limit&&maxDamper<data.damperLimit&&!failures&&!damperFailures&&applicability.valid:Math.abs(maxEnd-expected)<.6&&failures>0;
+    const detail=complete?`rango ${band}: ${maxEnd.toFixed(0)} µstrain en extremos, ${maxDamper.toFixed(0)} µstrain en la grapa y ${maxMotion.toFixed(2)} mm de movimiento`:`sin amortiguadores: máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expected})`;
+    setStatus(`Verificación ${data.code} / ${data.label}: ${detail}. ${match?"Coincide con la gráfica y los límites del informe.":`Revisar la configuración${applicability.message?`: ${applicability.message}`:"."}`} Curvas digitalizadas de TECNOSOFT III; la reproducción EBP independiente requiere Variable-2 y la respuesta dinámica original del ${data.model}.`,match?"ok":"bad");drawChart(rows);
+  }
+
+  function renderTr792Results(rows,limit){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const {span,scenario,data}=currentReference;
+    if(rows[0].tr792Subspan){
+      const maxHorizontal=Math.max(...rows.map((row)=>row.horizontalAmplitude)),maxVertical=Math.max(...rows.map((row)=>row.verticalAmplitude));
+      $("maxAmp").textContent=maxHorizontal.toFixed(0); $("maxStrain").textContent=maxVertical.toFixed(0); $("maxWind").textContent=span===431?"11.5":"5-30"; $("fails").textContent="0";
+      $("maxAmpLabel").textContent="Oscilación horizontal máx. (mm)"; $("maxStrainLabel").textContent="Oscilación vertical máx. (mm)"; $("maxWindLabel").textContent="Velocidad investigada (m/s)";
+      $("resultHead").innerHTML="<tr><th>Viento (m/s)</th><th>Amplitud horizontal (mm)</th><th>Amplitud vertical (mm)</th><th>Resultado</th></tr>";
+      $("results").innerHTML=span===265?'<tr><td>5-30</td><td>0</td><td>0</td><td>No revelada</td></tr>':rows.filter((row)=>row.measured).map((row)=>`<tr><td>${row.f.toFixed(1)}</td><td>${row.horizontalAmplitude.toFixed(0)}</td><td>${row.verticalAmplitude.toFixed(0)}</td><td>Máximo; agotada sobre 13 m/s</td></tr>`).join("");
+      const match=span===265?maxHorizontal===0:Math.abs(maxHorizontal-78)<.1&&Math.abs(maxVertical-49)<.1;
+      setStatus(`Verificación TR 792, Figura ${span===265?5:6}: ${span===265?"no se detecta oscilación de subvano entre 5 y 30 m/s":`máximo horizontal ${maxHorizontal.toFixed(0)} mm y vertical ${maxVertical.toFixed(0)} mm alrededor de 11,5 m/s; fenómeno agotado sobre 13 m/s`}. ${match?"Coincide con el informe.":"Revisar digitalización."} Distribución ${data.subspans.join(" + ")} m y separador S.2.400.55.CCR.`,match?"ok":"bad"); drawChart(rows); return;
+    }
+    const damped=scenario==="damped",maxEnd=Math.max(...rows.map((row)=>row.strain)),maxSpacer=Math.max(...rows.map((row)=>row.spacerStrain)),maxDamper=Math.max(...rows.map((row)=>row.damperStrain)),maxMotion=Math.max(...rows.map((row)=>row.damperAmplitude)),failures=rows.filter((row)=>Math.max(row.strain,row.spacerStrain,row.damperStrain)>limit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(2); $("maxStrain").textContent=maxEnd.toFixed(1); $("maxWind").textContent=Math.max(maxSpacer,maxDamper).toFixed(1); $("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Movimiento máx. 9305 (mm)"; $("maxStrainLabel").textContent="Deformación máx. suspensión (µstrain)"; $("maxWindLabel").textContent="Deformación máx. grapa accesorio (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>ε conductor aislado</th><th>ε suspensión</th><th>ε separador</th><th>ε Stockbridge</th><th>Movimiento 9305 (mm)</th></tr>";
+    $("results").innerHTML=rows.map((row)=>`<tr><td>${row.f.toFixed(1)}</td><td>${row.velocity.toFixed(2)}</td><td>${row.undampedStrain.toFixed(1)}</td><td>${row.strain.toFixed(1)}</td><td>${row.spacerStrain.toFixed(1)}</td><td>${row.damperStrain.toFixed(1)}</td><td>${row.damperAmplitude.toFixed(2)}</td></tr>`).join("");
+    const expected=damped?(span===265?[8,3,.67]:[18,9,1.52]):(span===265?[83,26,0]:[80,26,0]);
+    const match=Math.abs(maxEnd-expected[0])<.6&&Math.abs(Math.max(maxSpacer,maxDamper)-expected[1])<.6&&Math.abs(maxMotion-expected[2])<.02;
+    setStatus(`Verificación TR 792, Figura ${span===265?(damped?2:1):(damped?4:3)}: suspensión ${maxEnd.toFixed(0)} µstrain, grapa de accesorio ${Math.max(maxSpacer,maxDamper).toFixed(0)} µstrain${damped?` y movimiento máximo 9305 de ${maxMotion.toFixed(2)} mm`:""}. ${match?"Coincide con la curva digitalizada.":"Revisar digitalización."} Valores 0-pico; ${failures?`${failures} frecuencias exceden`:`ninguna frecuencia excede`} ${limit} µstrain en el sistema representado.`,match?"ok":"bad"); drawChart(rows);
+  }
+
+  function renderCharruaBundleResults(rows,limit,span){
+    if(!rows.length)throw new Error("El cálculo no produjo resultados.");
+    const maxEnd=Math.max(...rows.map(r=>r.strain)),maxSpacer=Math.max(...rows.map(r=>r.spacerStrain||0)),failures=rows.filter(r=>r.strain>limit||r.spacerStrain>limit).length,rec=makeRecommendation();
+    $("maxAmp").textContent=String(rec.valid?rec.total:0);$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent=maxSpacer.toFixed(1);$("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Separadores SPA450CA25";$("maxStrainLabel").textContent="Deformación máx. extremo (µstrain)";$("maxWindLabel").textContent="Deformación máx. grapa SPA (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>Modo</th><th>V (m/s)</th><th>ε extremo</th><th>ε grapa SPA</th></tr>";
+    $("results").innerHTML=rows.filter(r=>r.mode===1&&Math.abs(r.f-Math.round(r.f))<1e-5).map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>envolvente</td><td>${r.velocity.toFixed(2)}</td><td>${r.strain.toFixed(1)}</td><td>${r.spacerStrain.toFixed(1)}</td></tr>`).join("");
+    const match=rec.valid&&maxEnd<limit&&maxSpacer<limit&&!failures;
+    setStatus(`Verificación EA11-060311_v1, vano ${span.toFixed(0)} m: nube de 8 modos, máximo ${maxEnd.toFixed(0)} µstrain en extremos y ${maxSpacer.toFixed(0)} µstrain en grapas SPA450CA25; ${rec.valid?rec.total:0} separadores interiores. ${match?"Coincide con el dictamen seguro del informe.":"Revisar vano, tense o distribución."} Curvas digitalizadas; la validación independiente exige las matrices BUNDLE y propiedades dinámicas originales del SPA450CA25.`,match?"ok":"bad");drawChart(rows);
+  }
+
+  function renderAcar500Results(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const complete = rows[0].complete;
+    const scenario = rows[0].acarScenario;
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxSpacer = Math.max(...rows.map((r) => r.spacerStrain || 0));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude || 0));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3); $("maxStrain").textContent = maxEnd.toFixed(1); $("maxWind").textContent = maxSpacer.toFixed(1); $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. AMG (mm)"; $("maxStrainLabel").textContent = "Deformación máx. extremo (µstrain)"; $("maxWindLabel").textContent = "Deformación máx. grapa SPA (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>Modo</th><th>V (m/s)</th><th>ε extremo</th><th>ε grapa SPA</th><th>Movimiento AMG (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.mode}</td><td>${r.velocity.toFixed(2)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.spacerStrain || 0).toFixed(1)}</td><td>${(r.damperAmplitude || 0).toFixed(3)}</td></tr>`).join("");
+    const at9 = Math.max(...rows.filter((r) => Math.abs(r.f - 9) < .01).map((r) => r.strain));
+    const match = complete ? maxEnd < 150 && maxSpacer < 75 : Math.abs(maxEnd - 450) < 1 && failures > 0;
+    const label = scenario === "undamped" ? `sin Stockbridge: máximo ${maxEnd.toFixed(0)} µstrain; banda peligrosa iniciada a 9 Hz (${at9.toFixed(0)} µstrain) y extendida aproximadamente hasta 32 Hz` : `con AMG091526: máximo ${maxEnd.toFixed(0)} µstrain en extremos y ${maxSpacer.toFixed(0)} µstrain en grapas SPA450DA21`;
+    setStatus(`Verificación EA16-111644 / código interno EA16-111611 ${label}. ${match ? "Coincide con la gráfica y el dictamen del informe." : "Revisar la selección de accesorios o apoyos."} Curvas digitalizadas; la reproducción independiente exige matrices BUNDLE y ensayos dinámicos originales de SAPREM.`, match ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function renderGreeleyResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const scenario=rows[0].greeleyScenario, support=rows[0].greeleySupport;
+    const maxEnd=Math.max(...rows.map((r)=>r.strain)), maxDamper=Math.max(...rows.map((r)=>r.damperStrain||0)), maxMotion=Math.max(...rows.map((r)=>r.damperAmplitude||0)), failures=rows.filter((r)=>r.strain>limit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3); $("maxStrain").textContent=maxEnd.toFixed(1); $("maxWind").textContent=maxDamper.toFixed(1); $("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Movimiento máx. AMG (mm)"; $("maxStrainLabel").textContent="Deformación máx. extremo (µstrain)"; $("maxWindLabel").textContent="Deformación máx. grapa AMG (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa AMG</th><th>Movimiento AMG (mm)</th></tr>";
+    $("results").innerHTML=rows.map((r)=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain||0).toFixed(1)}</td><td>${(r.damperAmplitude||0).toFixed(3)}</td></tr>`).join("");
+    const expected=scenario==="undamped_tension"?650:scenario==="undamped_suspension"?480:null;
+    const match=expected ? Math.abs(maxEnd-expected)<1 && failures>0 : maxEnd<150 && maxDamper<75;
+    const description=expected ? `condición sin amortiguadores en ${support === "tension" ? "amarre" : "suspensión"}: máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expected})` : `vano de referencia ${scenario} m, ${support === "tension" ? "amarre" : "suspensión"}: máximo ${maxEnd.toFixed(0)} µstrain en extremos, ${maxDamper.toFixed(0)} µstrain en grapa y ${maxMotion.toFixed(2)} mm de movimiento`;
+    setStatus(`Verificación EA13-050612: ${description}. ${match?"Coincide con la gráfica y los límites del informe.":"Revisar apoyos o pauta seleccionada."} Curvas digitalizadas de TECNOSOFT III; una validación independiente requiere Variable-2 y la respuesta dinámica original del AMG152429.`,match?"ok":"bad");
+    drawChart(rows);
+  }
+
+  function renderDoc1058Results(rows,limit) {
+    if(!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const complete=rows[0].complete,maxEnd=Math.max(...rows.map(r=>r.strain)),maxDamper=Math.max(...rows.map(r=>r.damperStrain||0)),maxPower=Math.max(...rows.map(r=>r.damperPower||0)),failures=rows.filter(r=>r.strain>limit).length;
+    $("maxAmp").textContent=maxPower.toFixed(2); $("maxStrain").textContent=maxEnd.toFixed(1); $("maxWind").textContent=maxDamper.toFixed(1); $("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Potencia máx. VSD-35 (W)"; $("maxStrainLabel").textContent="Deformación máx. AGS (µstrain)"; $("maxWindLabel").textContent="Deformación máx. grapa VSD (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε AGS</th><th>ε grapa VSD</th><th>Potencia VSD (W)</th></tr>";
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain||0).toFixed(1)}</td><td>${(r.damperPower||0).toFixed(2)}</td></tr>`).join("");
+    const expected=complete?45:355,match=Math.abs(maxEnd-expected)<.6 && (complete?!failures:failures>0);
+    setStatus(`Verificación DOC N.º 1058 PLP: máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expected}) ${complete?"con dos VSD-35 a 0,74 m":"sin amortiguadores"}. ${match?"Coincidencia numérica correcta.":"Revisar la configuración."} Curvas digitalizadas de los gráficos 1-3 y del ensayo TR-808-E; el sufijo de grapa requiere el diámetro real sobre varillas.`,match?"ok":"bad");
+    drawChart(rows);
+  }
+
+  function renderAcar1000Results(rows,limit){
+    if(!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const complete=rows[0].complete, scenario=rows[0].acar1000Scenario;
+    const maxEnd=Math.max(...rows.map(r=>r.strain)), maxSpacer=Math.max(...rows.map(r=>r.spacerStrain||0)), maxMotion=Math.max(...rows.map(r=>r.damperAmplitude||0)), failures=rows.filter(r=>r.strain>limit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3); $("maxStrain").textContent=maxEnd.toFixed(1); $("maxWind").textContent=maxSpacer.toFixed(1); $("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Movimiento máx. AMG (mm)"; $("maxStrainLabel").textContent="Deformación máx. extremo (µstrain)"; $("maxWindLabel").textContent="Deformación máx. grapa SPA (µstrain)";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>Modo</th><th>V (m/s)</th><th>ε extremo</th><th>ε grapa SPA</th><th>Movimiento AMG (mm)</th></tr>";
+    $("results").innerHTML=rows.map(r=>`<tr><td>${r.f.toFixed(1)}</td><td>${r.mode}</td><td>${r.velocity.toFixed(2)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.spacerStrain||0).toFixed(1)}</td><td>${(r.damperAmplitude||0).toFixed(3)}</td></tr>`).join("");
+    const match=complete ? maxEnd<150 && maxSpacer<75 : Math.abs(maxEnd-485)<1 && failures>0;
+    const message=complete ? `vano de referencia ${scenario} m: máximo ${maxEnd.toFixed(0)} µstrain en extremos, ${maxSpacer.toFixed(0)} µstrain en grapas SPA450DA30 y ${maxMotion.toFixed(2)} mm de movimiento` : `sin Stockbridge: máximo ${maxEnd.toFixed(0)} µstrain y banda peligrosa aproximada de 6 a 21 Hz`;
+    setStatus(`Verificación EA15-121816 Rev.1: ${message}. ${match?"Coincide con la gráfica y el dictamen del informe.":"Revisar selección de accesorios o apoyos."} Nube modal digitalizada; la validación independiente requiere matrices BUNDLE y ensayos dinámicos originales del AMG152429.`,match?"ok":"bad"); drawChart(rows);
+  }
+
+  function renderEA15OpgwResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const scenario = rows[0].ea15Scenario;
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain || 0));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude || 0));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3); $("maxStrain").textContent = maxEnd.toFixed(1); $("maxWind").textContent = maxDamper.toFixed(1); $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. AMG (mm)"; $("maxStrainLabel").textContent = "Deformación máx. extremo (µstrain)"; $("maxWindLabel").textContent = "Deformación máx. grapa AMG (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa AMG</th><th>Movimiento AMG (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain || 0).toFixed(1)}</td><td>${(r.damperAmplitude || 0).toFixed(3)}</td></tr>`).join("");
+    const at9 = curveValue(rows.map((r) => [r.f,r.strain]),9), at20 = curveValue(rows.map((r) => [r.f,r.strain]),20);
+    const match = scenario === "undamped" ? Math.abs(at9-215)<1 && Math.abs(at20-410)<1 && failures>0 : maxEnd < 150 && maxDamper < 75;
+    const text = scenario === "undamped" ? `${at9.toFixed(0)} µstrain a 9 Hz y ${at20.toFixed(0)} µstrain a 20 Hz; máximo ${maxEnd.toFixed(0)} µstrain y condición peligrosa hasta aproximadamente 38 Hz` : `vano de referencia ${scenario} m: máximo ${maxEnd.toFixed(0)} µstrain en extremos, ${maxDamper.toFixed(0)} µstrain en la grapa y ${maxMotion.toFixed(2)} mm de movimiento`;
+    setStatus(`Verificación EA15-121818 Rev.1: ${text}. ${match ? "Coincide con la gráfica y los límites del informe." : "Revisar pauta o apoyos seleccionados."} Curva digitalizada; la validación independiente requiere Variable-2 y la respuesta dinámica original del AMG091534.`, match ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function renderEA26Results(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxSpacer = Math.max(...rows.map((r) => r.spacerStrain));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    const complete = rows[0].complete;
+    $("maxAmp").textContent = maxMotion.toFixed(3);
+    $("maxStrain").textContent = maxEnd.toFixed(1);
+    $("maxWind").textContent = maxSpacer.toFixed(1);
+    $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. amortiguador (mm)";
+    $("maxStrainLabel").textContent = "Deformación máx. extremo (µstrain)";
+    $("maxWindLabel").textContent = "Deformación máx. grapa separador (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>Modo</th><th>V (m/s)</th><th>ε extremo</th><th>ε grapa separador</th><th>Movimiento amort. (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.mode}</td><td>${r.velocity.toFixed(2)}</td><td>${r.strain.toFixed(1)}</td><td>${r.spacerStrain.toFixed(1)}</td><td>${r.damperAmplitude.toFixed(3)}</td></tr>`).join("");
+    const qualitativeMatch = complete ? maxEnd < limit && maxSpacer < limit : maxEnd > limit;
+    setStatus(`Verificación EA26-071311: ${rows.length} puntos modales; envolvente extrema ${maxEnd.toFixed(0)} µstrain y grapa de separador ${maxSpacer.toFixed(0)} µstrain. ${qualitativeMatch ? "Coincide con el dictamen y la escala visual del informe." : "No coincide con el dictamen esperado."} ${complete ? "El sistema SPA400DA35 + AMG-152440 cumple 150 µstrain." : "Los separadores solos no cumplen 150 µstrain."} Nube digitalizada; la validación independiente requiere las matrices BUNDLE y las curvas dinámicas SAPREM.`, qualitativeMatch && complete ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function renderAlumoweldResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = "0.000";
+    $("maxStrain").textContent = maxEnd.toFixed(1);
+    $("maxWind").textContent = "0.0";
+    $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento amortiguador (mm)";
+    $("maxStrainLabel").textContent = "Deformación máx. extremo (µstrain)";
+    $("maxWindLabel").textContent = "Deformación grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo (µstrain)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(2)}</td></tr>`).join("");
+    setStatus(`Verificación EA26-071312: deformación máxima digitalizada ${maxEnd.toFixed(1)} µstrain; permanece bajo 150 µstrain y bajo el límite de ${limit} µstrain. Coincide con la gráfica y el dictamen: no se requiere amortiguamiento exterior.${dampers.length ? " El informe no incluye una gráfica del caso opcional con AMG-030513." : ""}`, failures ? "bad" : "ok");
+    drawChart(rows);
+  }
+
+  function renderMonteaguilaResults(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const withDampers = dampers.some((d) => d.catalog.reference === "AMG-091526");
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain || 0));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude || 0));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3);
+    $("maxStrain").textContent = maxEnd.toFixed(1);
+    $("maxWind").textContent = maxDamper.toFixed(1);
+    $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. grapa amort. (mm)";
+    $("maxStrainLabel").textContent = "Deformación máx. en extremo (µstrain)";
+    $("maxWindLabel").textContent = "Deformación máx. grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa amort.</th><th>Movimiento grapa (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain || 0).toFixed(1)}</td><td>${(r.damperAmplitude || 0).toFixed(3)}</td></tr>`).join("");
+    const at12 = curveValue(rows.map((r) => [r.f, r.strain]), 12);
+    const at39 = curveValue(rows.map((r) => [r.f, r.strain]), 39);
+    const match = withDampers ? maxEnd <= 105 : Math.abs(at12 - 306) < 1 && Math.abs(at39 - 1055) < 1;
+    const message = withDampers
+      ? `Verificación EA26-071313 con pauta: máximo digitalizado ${maxEnd.toFixed(0)} µstrain; cumple el límite de ${limit} µstrain. Coincide con la escala y el dictamen de la página 7.`
+      : `Verificación EA26-071313 sin amortiguadores: ${at12.toFixed(0)} µstrain a 12 Hz y ${at39.toFixed(0)} µstrain a 39 Hz; objetivo 306/1055. La curva permanece sobre 150 µstrain hasta aproximadamente 118 Hz.`;
+    setStatus(`${message} Curvas digitalizadas del informe; una validación independiente requiere la función Variable-2 y la respuesta dinámica original del AMG-091526.`, match && (withDampers ? !failures : failures > 0) ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function renderMonteaguila13Results(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const withDampers = dampers.some((d) => d.catalog.reference === "AMG-050926");
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain || 0));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude || 0));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3);
+    $("maxStrain").textContent = maxEnd.toFixed(1);
+    $("maxWind").textContent = maxDamper.toFixed(1);
+    $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. grapa amort. (mm)";
+    $("maxStrainLabel").textContent = "Deformación máx. en extremo (µstrain)";
+    $("maxWindLabel").textContent = "Deformación máx. grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa amort.</th><th>Movimiento grapa (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain || 0).toFixed(1)}</td><td>${(r.damperAmplitude || 0).toFixed(3)}</td></tr>`).join("");
+    const at14 = curveValue(rows.map((r) => [r.f, r.strain]), 14);
+    const at40 = curveValue(rows.map((r) => [r.f, r.strain]), 40);
+    const match = withDampers ? maxEnd <= 100.1 : Math.abs(at14 - 263) < 1 && Math.abs(at40 - 841) < 1;
+    const message = withDampers
+      ? `Verificación EA26-071314 con pauta: máximo digitalizado ${maxEnd.toFixed(0)} µstrain; cumple el límite de ${limit} µstrain. La corrida TECNOSOFT usa vano 210 m para representar el vano contractual de 207,3 m.`
+      : `Verificación EA26-071314 sin amortiguadores: ${at14.toFixed(0)} µstrain a 14 Hz y ${at40.toFixed(0)} µstrain a 40 Hz; objetivo 263/841. La deformación permanece sobre ${limit} µstrain en todo el rango.`;
+    setStatus(`${message} Curvas digitalizadas del informe; una validación independiente requiere la función Variable-2 y la respuesta dinámica original del AMG-050926.`, match && (withDampers ? !failures : failures > 0) ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function renderOpgw128Results(rows, limit) {
+    if (!rows.length) throw new Error("El cálculo no produjo resultados.");
+    const scenario = rows[0].opgwScenario;
+    const maxEnd = Math.max(...rows.map((r) => r.strain));
+    const maxDamper = Math.max(...rows.map((r) => r.damperStrain || 0));
+    const maxMotion = Math.max(...rows.map((r) => r.damperAmplitude || 0));
+    const failures = rows.filter((r) => r.strain > limit).length;
+    $("maxAmp").textContent = maxMotion.toFixed(3); $("maxStrain").textContent = maxEnd.toFixed(1); $("maxWind").textContent = maxDamper.toFixed(1); $("fails").textContent = String(failures);
+    $("maxAmpLabel").textContent = "Movimiento máx. grapa amort. (mm)"; $("maxStrainLabel").textContent = "Deformación máx. en extremo (µstrain)"; $("maxWindLabel").textContent = "Deformación máx. grapa amort. (µstrain)";
+    $("resultHead").innerHTML = "<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>ε extremo</th><th>ε grapa amort.</th><th>Movimiento grapa (mm)</th><th>Antinodo (mm)</th></tr>";
+    $("results").innerHTML = rows.map((r) => `<tr><td>${r.f.toFixed(1)}</td><td>${r.velocity.toFixed(2)}</td><td>${r.reynolds.toFixed(0)}</td><td>${r.strain.toFixed(1)}</td><td>${(r.damperStrain || 0).toFixed(1)}</td><td>${(r.damperAmplitude || 0).toFixed(3)}</td><td>${(r.antinodeAmplitude || 0).toFixed(3)}</td></tr>`).join("");
+    const expected = scenario === "undamped" ? [418,0] : scenario === 250 ? [99,57] : [63,76];
+    const match = Math.abs(maxEnd - expected[0]) < 0.6 && Math.abs(maxDamper - expected[1]) < 0.6;
+    const sourceLabel = currentReference?.title?.split("·")[0]?.trim() || "EC-90.0013 AB";
+    setStatus(`Verificación ${sourceLabel} OPGW: máximo ${maxEnd.toFixed(0)} µstrain (objetivo ${expected[0]})${scenario !== "undamped" ? `; grapa del 4D-20 ${maxDamper.toFixed(0)} µstrain (objetivo ${expected[1]})` : ""}. ${match ? "Coincidencia numérica correcta." : "Revisar digitalización."} ${failures ? `${failures} frecuencias superan` : "Ninguna frecuencia supera"} ${limit} µstrain. Curvas digitalizadas; la validación independiente requiere Variable-2 y la respuesta dinámica original 4D-20.`, match && (scenario === "undamped" ? failures > 0 : !failures) ? "ok" : "bad");
+    drawChart(rows);
+  }
+
+  function drawChart(rows) {
+    const canvas = $("chart");
+    const ratio = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth || 700;
+    const height = canvas.clientHeight || 310;
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+    const pad = 42;
+    const minF = rows[0].f;
+    const maxF = rows[rows.length - 1].f;
+    const isEA16 = Boolean(rows[0]?.ea16);
+    const isFlint = Boolean(rows[0]?.flint);
+    const isBundle = Boolean(rows[0]?.bundle);
+    const isAlumoweld = Boolean(rows[0]?.alumoweld);
+    const isMonteaguila = Boolean(rows[0]?.monteaguila);
+    const isMonteaguila13 = Boolean(rows[0]?.monteaguila13);
+    const isOpgw128 = Boolean(rows[0]?.opgw128);
+    const isEA15Opgw = Boolean(rows[0]?.ea15opgw);
+    const isGreeley = Boolean(rows[0]?.greeley);
+    const isDoc1058 = Boolean(rows[0]?.doc1058);
+    const isCairo = Boolean(rows[0]?.cairo);
+    const isLchc = Boolean(rows[0]?.lchc);
+    const isLchc007=Boolean(rows[0]?.lchc007);
+    const isLab=Boolean(rows[0]?.lab);
+    const isCharrua=Boolean(rows[0]?.charrua);
+    const isFarellon=Boolean(rows[0]?.farellon);
+    const isCigre=Boolean(rows[0]?.cigre);
+    const isTr792=Boolean(rows[0]?.tr792),isTr792Subspan=Boolean(rows[0]?.tr792Subspan);
+    const isPlpSvdPower=Boolean(rows[0]?.plpSvdPower),isPlpSvdOptical=Boolean(rows[0]?.plpSvdOptical);
+    const isReference = isEA16 || isFlint || isBundle || isAlumoweld || isMonteaguila || isMonteaguila13 || isOpgw128 || isEA15Opgw || isGreeley || isDoc1058 || isCairo || isLchc || isLchc007 || isLab || isCharrua || isFarellon || isTr792 || isPlpSvdPower || isPlpSvdOptical;
+    const hasExternalDamper = rows.some((r) => r.damperStrain > 0 || r.damperAmplitude > 0);
+    const maxY = isPlpSvdPower?2:isPlpSvdOptical?.04:isTr792Subspan?80:isTr792?Math.ceil(Math.max(...rows.map((r)=>r.undampedStrain))/20)*20:isCigre ? Math.max(...rows.map((r) => r.amplitudeHighMm)) * 1.12 || 1 : isFarellon?500:isCharrua?(hasExternalDamper?500:Math.max(...rows.map(r=>r.strain))>500?1000:500):isLab?500:isLchc007?300:isLchc ? (Math.max(...rows.map(r=>r.undampedStrain))>700?1000:700) : isCairo ? (hasExternalDamper ? 500 : 1000) : isDoc1058 ? 400 : isAlumoweld || isEA15Opgw ? 500 : isGreeley ? (hasExternalDamper ? 500 : rows[0].greeleySupport === "tension" ? 1000 : 500) : isOpgw128 ? (hasExternalDamper ? 500 : 1000) : (isMonteaguila || isMonteaguila13) ? (hasExternalDamper ? 500 : isMonteaguila13 ? 1000 : 1500) : isBundle ? (rows[0].complete ? 250 : 1000) : isFlint ? (hasExternalDamper ? 500 : 1000) : isEA16 ? (hasExternalDamper ? 500 : 1500) : Math.max(...rows.map((r) => r.amplitudeMm)) * 1.12 || 1;
+    const X = (f) => pad + (f - minF) / (maxF - minF || 1) * (width - pad - 14);
+    const Y = (v) => height - pad - v / maxY * (height - pad - 22);
+    ctx.clearRect(0, 0, width, height);
+    ctx.strokeStyle = "#d9e2e7";
+    ctx.beginPath(); ctx.moveTo(pad, 12); ctx.lineTo(pad, height - pad); ctx.lineTo(width - 10, height - pad); ctx.stroke();
+    ctx.font = "10px system-ui"; ctx.fillStyle = "#607484";
+    for (let i = 0; i <= 5; i += 1) {
+      const value = maxY * i / 5, y = Y(value);
+      ctx.strokeStyle = "#e1e8ec"; ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(width - 10, y); ctx.stroke();
+      ctx.fillText((isPlpSvdPower || isPlpSvdOptical) ? value.toFixed(2) : value.toFixed(0), 4, y + 3);
+    }
+    for (let i = 0; i <= 10; i += 1) {
+      const frequency = minF + (maxF - minF) * i / 10, x = X(frequency);
+      ctx.strokeStyle = "#edf1f3"; ctx.beginPath(); ctx.moveTo(x, 12); ctx.lineTo(x, height - pad); ctx.stroke();
+      if (i % 2 === 0) ctx.fillText(frequency.toFixed(0), x - 7, height - pad + 14);
+    }
+    const plot = (color, value) => { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); rows.forEach((r, i) => { if (i) ctx.lineTo(X(r.f), Y(value(r))); else ctx.moveTo(X(r.f), Y(value(r))); }); ctx.stroke(); };
+    if(isPlpSvdPower){
+      plot("#087f8c",(row)=>row.dissipatedPower);plot("#dc2626",(row)=>row.windPower);
+      $("chartLegend").innerHTML='<span style="color:#087f8c">● Potencia disipada medida por el SVD 5050105</span> · <span style="color:#dc2626">● Potencia eólica calculada para 250 m</span> · curva digitalizada';
+      ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Potencia (W)",pad,12);
+    } else if(isPlpSvdOptical){
+      plot("#7c3aed",(row)=>row.opticalChange);
+      $("chartLegend").innerHTML='<span style="color:#7c3aed">● Cambio de nivel óptico durante el ensayo SVD</span> · valores tabulados en TR-739-E';
+      ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Cambio óptico (dBm)",pad,12);
+    } else if(isTr792Subspan){
+      rows.filter((row)=>row.measured).forEach((row)=>{ctx.fillStyle="#dc2626";ctx.beginPath();ctx.arc(X(row.f),Y(row.horizontalAmplitude),5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#991b1b";ctx.fillRect(X(row.f)-4,Y(row.verticalAmplitude)-4,8,8);});
+      $("chartLegend").innerHTML=rows.some((row)=>row.measured)?'<span style="color:#dc2626">● Máxima amplitud relativa horizontal</span> · <span style="color:#991b1b">■ Máxima amplitud relativa vertical</span>':'No se reveló oscilación de subvano entre 5 y 30 m/s.';
+      ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Amplitud de subvano (mm)",pad,12);
+    } else if(isTr792){
+      plot("#ef4444",(row)=>row.undampedStrain);plot("#22c55e",(row)=>row.strain);plot("#2563eb",(row)=>row.spacerStrain);plot("#d946ef",(row)=>row.damperStrain);
+      $("chartLegend").innerHTML='<span style="color:#ef4444">● Conductor aislado</span> · <span style="color:#22c55e">● Grapa de suspensión</span> · <span style="color:#2563eb">● Grapa de separador</span> · <span style="color:#d946ef">● Grapa 9305</span> · valores 0-pico';
+      ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText(`Deformación (µstrain, 0-${maxY})`,pad,12);
+    } else if (isCigre) {
+      plot("#94a3b8", (r) => r.amplitudeHighMm);
+      plot("#087f8c", (r) => r.amplitudeMm);
+      plot("#7dd3c7", (r) => r.amplitudeLowMm);
+      $("chartLegend").innerHTML = '<span style="color:#087f8c">● Amplitud central</span> · <span style="color:#94a3b8">● envolvente superior</span> · <span style="color:#7dd3c7">● envolvente inferior</span> · valores pico a pico';
+      ctx.fillStyle = "#17324d"; ctx.font = "11px system-ui"; ctx.fillText("Amplitud pp (mm) · EBP CIGRE", pad, 12);
+    } else if (isAlumoweld) {
+      plot("#111827", (r) => r.strain);
+      $("chartLegend").innerHTML = `<span style="color:#111827">● Deformación en extremos, condición sin amortiguadores</span> · escala TECNOSOFT 0-500 µstrain${rows[0].ec0016 ? " · digitalización visual aproximada" : ""}`;
+      ctx.fillStyle = "#17324d"; ctx.font = "11px system-ui"; ctx.fillText("Deformación (µstrain, 0-500)", pad, 12);
+    } else if (isBundle) {
+      const point = (color, value) => { ctx.fillStyle = color; rows.forEach((r) => { const v = value(r); ctx.fillRect(X(r.f) - 1, Y(v) - 1, 2, 2); }); };
+      point("#111827", (r) => r.strain);
+      point("#c43d4b", (r) => r.spacerStrain);
+      point("#16a34a", (r) => r.damperAmplitude / 2 * maxY);
+      $("chartLegend").innerHTML = rows[0].charruaBundle ? '<span style="color:#111827">● Nube modal: deformación en extremos</span> · <span style="color:#c43d4b">● Grapas del SPA450CA25</span> · 8 modos por frecuencia' : '<span style="color:#111827">● Nube modal: deformación en extremos</span> · <span style="color:#c43d4b">● Grapas de separador</span> · <span style="color:#16a34a">● Movimiento amortiguador (eje derecho 0-2 mm)</span>';
+      ctx.fillStyle = "#17324d"; ctx.font = "11px system-ui"; ctx.fillText(`Deformación (µstrain, 0-${maxY})`, pad, 12); ctx.fillStyle = "#16a34a"; ctx.fillText("Amplitud (0-2 mm)", width - 118, 12);
+    } else if(isLchc007){
+      plot("#2563eb",r=>r.undampedStrain);plot("#16a34a",r=>r.strain);plot("#dc2626",r=>r.spacerStrain);$("chartLegend").innerHTML='<span style="color:#2563eb">● Conductor individual sin dispositivos</span> · <span style="color:#16a34a">● Haz cuádruple con separadores</span> · <span style="color:#dc2626">● Grapa del separador</span> · valores 0-pico';ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Deformación (µstrain, 0-300)",pad,12);
+    } else if (isLchc) {
+      plot("#dc2626",r=>r.undampedStrain); plot("#1d4ed8",r=>r.strain); plot("#16855b",r=>r.damperStrain);
+      if(rows[0].lchcBeacons)plot("#7c3aed",r=>r.sphereStrain);
+      $("chartLegend").innerHTML=`<span style="color:#dc2626">● Sin amortiguadores</span> · <span style="color:#1d4ed8">● Con amortiguadores</span> · <span style="color:#16855b">● Grapa del amortiguador</span>${rows[0].lchcBeacons?' · <span style="color:#7c3aed">● Grapa de baliza</span>':""} · valores 0-pico`;
+      ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText(`Deformación (µstrain, 0-${maxY})`,pad,12);
+    } else if(isFarellon){
+      plot("#dc2626",r=>r.undampedStrain);plot("#16a34a",r=>r.strain);plot("#7c3aed",r=>r.damperStrain);
+      $("chartLegend").innerHTML='<span style="color:#dc2626">● Sin amortiguadores</span> · <span style="color:#16a34a">● Deformación en extremo con SD</span> · <span style="color:#7c3aed">● Grapa del amortiguador SD</span> · valores 0-pico';ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Deformación (µstrain, 0-500)",pad,12);
+    } else if (isReference) {
+      plot("#111827", (r) => r.strain);
+      plot("#16855b", (r) => r.damperStrain);
+      const rightAxisMax = (isFlint || isOpgw128 || isCairo) ? 20 : 2;
+      plot("#c43d4b", (r) => r.damperAmplitude / rightAxisMax * maxY);
+      if (isFlint || isOpgw128 || isCairo) {
+        plot("#2563eb", (r) => r.antinodeAmplitude / rightAxisMax * maxY);
+      }
+      if (isDoc1058) plot("#7c3aed", (r) => (r.damperPower||0) / 4 * maxY);
+      $("chartLegend").innerHTML = `<span style="color:#111827">● Deformación en extremos (µstrain, eje izquierdo)</span> · <span style="color:#16855b">● Deformación en grapa del amortiguador (µstrain)</span>${isDoc1058 ? ` · <span style="color:#7c3aed">● Potencia VSD-35 (eje derecho 0-4 W)</span>` : ` · <span style="color:#c43d4b">● Movimiento de grapa (mm, eje derecho 0-${rightAxisMax})</span>`}${(isFlint || isOpgw128 || isCairo) ? ` · <span style="color:#2563eb">● Amplitud de antinodo (mm, eje derecho 0-${rightAxisMax})</span>` : ""}`;
+      ctx.fillStyle = "#17324d"; ctx.font = "11px system-ui"; ctx.fillText(`Deformación (µstrain, 0-${maxY})`, pad, 12); ctx.fillStyle = isDoc1058 ? "#7c3aed" : "#c43d4b"; ctx.fillText(isDoc1058 ? "Potencia VSD (0-4 W)" : `Amplitud (0-${rightAxisMax} mm)`, width - 128, 12);
+    } else {
+      plot("#087f8c", (r) => r.amplitudeMm);
+      $("chartLegend").textContent = "Curva de amplitud pico a pico calculada por EBP.";
+      ctx.fillStyle = "#17324d"; ctx.font = "11px system-ui"; ctx.fillText("Amplitud pp (mm)", pad, 12);
+    }
+    const xAxisLabel=isPlpSvdOptical?"Ciclos acumulados (millones)":isTr792Subspan?"Velocidad de viento (m/s)":"Frecuencia (Hz)";
+    ctx.fillText(xAxisLabel,width-(isPlpSvdOptical?180:isTr792Subspan?155:98),height-8);
+  }
+
+  function downloadCsv() {
+    if (!lastRows.length) { setStatus("Primero debe calcular el estudio.", "bad"); return; }
+    const cigre=Boolean(lastRows[0]?.cigre);
+    const doc1058=Boolean(lastRows[0]?.doc1058), lchc=Boolean(lastRows[0]?.lchc),lchc007=Boolean(lastRows[0]?.lchc007);
+    const tr792=Boolean(lastRows[0]?.tr792),tr792Subspan=Boolean(lastRows[0]?.tr792Subspan);
+    const plpSvdPower=Boolean(lastRows[0]?.plpSvdPower),plpSvdOptical=Boolean(lastRows[0]?.plpSvdOptical);
+    const reference = Boolean(lastRows[0]?.ea16 || lastRows[0]?.flint || lastRows[0]?.cairo || lchc || lchc007 || lastRows[0]?.lab || lastRows[0]?.charrua || lastRows[0]?.farellon || lastRows[0]?.monteaguila || lastRows[0]?.monteaguila13 || lastRows[0]?.opgw128 || lastRows[0]?.ea15opgw || lastRows[0]?.greeley || doc1058 || tr792);
+    const bundle = Boolean(lastRows[0]?.bundle);
+    const alumoweld = Boolean(lastRows[0]?.alumoweld);
+    const header = plpSvdPower?"f_Hz,dissipated_power_W,wind_power_250m_W,power_ratio\n":plpSvdOptical?"cycles_million,optical_level_change_dBm\n":cigre?"f_Hz,V_m_s,Strouhal,Re,lambda_m,amplitude_pp_mm,amplitude_low_mm,amplitude_high_mm,antinode_strain_microstrain,control_strain_low_microstrain,control_strain_central_microstrain,control_strain_high_microstrain,wind_power_W,self_damping_power_W,damper_power_W,damper_motion_peak_mm,balance_error\n":tr792Subspan?"wind_m_s,horizontal_amplitude_mm,vertical_amplitude_mm,measured\n":tr792?"f_Hz,V_m_s,isolated_strain_microstrain,suspension_strain_microstrain,spacer_clamp_strain_microstrain,damper_clamp_strain_microstrain,damper_motion_mm\n":lchc007?"f_Hz,V_m_s,Re,undamped_strain_microstrain,damped_strain_microstrain,spacer_clamp_strain_microstrain,bundle_motion_mm\n":lchc ? "f_Hz,V_m_s,Re,undamped_strain_microstrain,damped_strain_microstrain,damper_clamp_strain_microstrain,sphere_clamp_strain_microstrain,damper_motion_mm\n" : doc1058 ? "f_Hz,V_m_s,Re,ags_strain_microstrain,vsd_clamp_strain_microstrain,vsd_power_W\n" : alumoweld ? "f_Hz,V_m_s,Re,end_strain_microstrain\n" : bundle ? "f_Hz,mode,V_m_s,end_strain_microstrain,spacer_clamp_strain_microstrain,damper_motion_mm\n" : reference ? "f_Hz,V_m_s,Re,end_strain_microstrain,damper_clamp_strain_microstrain,damper_motion_mm,antinode_motion_mm\n" : "f_Hz,V_m_s,Re,lambda_m,amplitude_pp_mm,strain_microstrain,wind_power_W\n";
+    const body = lastRows.map((r) => plpSvdPower?[r.f,r.dissipatedPower,r.windPower,r.efficiency].join(","):plpSvdOptical?[r.f,r.opticalChange].join(","):cigre?[r.f,r.velocity,r.strouhal,r.reynolds,r.wavelength,r.amplitudeMm,r.amplitudeLowMm,r.amplitudeHighMm,r.antinodeStrain,r.strainLow,r.strain,r.strainHigh,r.windPower,r.selfPower,r.damperPower,r.damperAmplitude,r.balanceError].join(","):tr792Subspan?[r.f,r.horizontalAmplitude,r.verticalAmplitude,r.measured].join(","):tr792?[r.f,r.velocity,r.undampedStrain,r.strain,r.spacerStrain,r.damperStrain,r.damperAmplitude].join(","):lchc007?[r.f,r.velocity,r.reynolds,r.undampedStrain,r.strain,r.spacerStrain,r.damperAmplitude].join(","):lchc ? [r.f,r.velocity,r.reynolds,r.undampedStrain,r.strain,r.damperStrain,r.sphereStrain||0,r.damperAmplitude].join(",") : doc1058 ? [r.f,r.velocity,r.reynolds,r.strain,r.damperStrain,r.damperPower].join(",") : alumoweld ? [r.f, r.velocity, r.reynolds, r.strain].join(",") : bundle ? [r.f, r.mode, r.velocity, r.strain, r.spacerStrain, r.damperAmplitude].join(",") : reference ? [r.f, r.velocity, r.reynolds, r.strain, r.damperStrain, r.damperAmplitude, r.antinodeAmplitude ?? ""].join(",") : [r.f, r.velocity, r.reynolds,r.wavelength,r.amplitudeMm,r.strain,r.windPower].join(",")).join("\n");
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([header + body], { type: "text/csv;charset=utf-8" }));
+    link.download = cigre ? "estudio_ebp_cigre.csv" : "estudio_ebp.csv";
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+
+  function setStatus(message, type = "") {
+    $("status").textContent = message;
+    $("status").className = `status ${type}`.trim();
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    addFieldHelpers();
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="PLP TR-739-E / TR-743-E · ensayos SVD"><option value="tr739-underdamped">TR-739-E · 1 SVD · 15 millones de ciclos</option><option value="tr739-adequate">TR-739-E · 3 SVD · 22 millones de ciclos</option><option value="tr743-power">TR-743-E · SVD 5050105 · potencia 16-106 Hz</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="TR 792 · LT Entre Ríos-Charrúa · AAC JESSAMINE dúplex"><option value="tr792-265-bare">265 m · vibración eólica · sin Stockbridge</option><option value="tr792-265-damped">265 m · vibración eólica · con 9305.07/G/1</option><option value="tr792-431-bare">431 m · vibración eólica · sin Stockbridge</option><option value="tr792-431-damped">431 m · vibración eólica · con 9305.07/G/1</option><option value="tr792-265-subspan">265 m · oscilación de subvano</option><option value="tr792-431-subspan">431 m · oscilación de subvano</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="CL28-1268 / 025-20 - OPGW 12,2 / SD-0302-D27"><option value="farellon-opgw-bare">OPGW 12,2 · sin amortiguadores</option><option value="farellon-opgw-short">OPGW 12,2 · vano 250 m · 1 SD</option><option value="farellon-opgw-long">OPGW 12,2 · vano 377 m · 2 SD</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="CL28-1268 / 024-20 - AAAC Flint / SD-0403-D27"><option value="farellon-flint-bare">AAAC Flint · sin amortiguadores</option><option value="farellon-flint-short">AAAC Flint · vano 225 m · 1 SD</option><option value="farellon-flint-long">AAAC Flint · vano 377 m · 2 SD</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="CL28-1268 / 023-20 - AAAC Greeley / SD-0403-D34"><option value="farellon-greeley-bare">AAAC Greeley · sin amortiguadores</option><option value="farellon-greeley-short">AAAC Greeley · vano 250 m · 1 SD</option><option value="farellon-greeley-long">AAAC Greeley · vano 378 m · 2 SD</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA11-102812_v1 - OPGW 17,25 / AMG091529"><option value="charrua-opgw1725-bare">OPGW 17,25 · sin amortiguadores</option><option value="charrua-opgw1725-short">OPGW 17,25 · vano 300 m</option><option value="charrua-opgw1725-medium">OPGW 17,25 · vano 600 m</option><option value="charrua-opgw1725-long">OPGW 17,25 · vano 960 m</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA11-102811_v2 - OPGW 12,8 / AMG050926"><option value="charrua-opgw128-bare">OPGW 12,8 · sin amortiguadores</option><option value="charrua-opgw128-short">OPGW 12,8 · vano 275 m</option><option value="charrua-opgw128-medium">OPGW 12,8 · vano 600 m</option><option value="charrua-opgw128-long">OPGW 12,8 · vano 960 m</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA11-060612_v1 - EHS 3/8 / AMG030513"><option value="charrua-ehs-bare">EHS 3/8 · sin amortiguadores</option><option value="charrua-ehs-short">EHS 3/8 · vano 450 m</option><option value="charrua-ehs-medium">EHS 3/8 · vano 900 m</option><option value="charrua-ehs-long">EHS 3/8 · vano 960 m</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA11-060611_v1 - COCHIN / AMG050920"><option value="charrua-cochin-bare-tension">COCHIN · sin amortiguadores · amarre</option><option value="charrua-cochin-bare-suspension">COCHIN · sin amortiguadores · suspensión</option><option value="charrua-cochin-short">COCHIN · vano 350 m</option><option value="charrua-cochin-medium">COCHIN · vano 700 m</option><option value="charrua-cochin-long">COCHIN · vano 960 m</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA11-060311_v1 - ACAR 700 cuádruple / SPA450CA25"><option value="charrua-bundle-450">ACAR 700 cuádruple · vano 450 m</option><option value="charrua-bundle-958">ACAR 700 cuádruple · vano 958 m</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EC-90.0016 / EA19-032511 - Cu 1/0 AWG"><option value="ec0016-cu">Cu 1/0 AWG 7H · vano 198,1 m · sin amortiguadores</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="02042-13-L - Laberinto FV / ACAR 350 MCM"><option value="lab-undamped-tension">ACAR 350 · sin amortiguadores · amarre</option><option value="lab-undamped-suspension">ACAR 350 · sin amortiguadores · suspensión</option><option value="lab-damped-tension">ACAR 350 · vano 350 m · AMG050920 · amarre</option><option value="lab-damped-suspension">ACAR 350 · vano 350 m · AMG050920 · suspensión</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="LCHC-500-E-ES-007 - ACAR 700 MCM cuádruple"><option value="lchc007-low">ACAR 700 · vano 480 m · zona baja</option><option value="lchc007-high">ACAR 700 · vano 480 m · zona alta sin hielo</option><option value="lchc007-ice">ACAR 700 · vano 480 m · zona alta con hielo</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="LCHC-500-E-ES-008 - OPGW SALVI"><option value="lchc-128-eds-suspension">OPGW 12,8 · EDS · suspensión</option><option value="lchc-128-eds-tension">OPGW 12,8 · EDS · amarre</option><option value="lchc-128-wind_low-suspension">OPGW 12,8 · viento zona baja · suspensión</option><option value="lchc-128-wind_low-tension">OPGW 12,8 · viento zona baja · amarre</option><option value="lchc-128-wind_high-suspension">OPGW 12,8 · viento zona alta · suspensión</option><option value="lchc-128-wind_high-tension">OPGW 12,8 · viento zona alta · amarre</option><option value="lchc-128-ice_high-suspension">OPGW 12,8 · hielo zona alta · suspensión</option><option value="lchc-128-ice_high-tension">OPGW 12,8 · hielo zona alta · amarre</option><option value="lchc-133-eds-suspension">OPGW 13,3 · EDS · suspensión</option><option value="lchc-133-eds-tension">OPGW 13,3 · EDS · amarre</option><option value="lchc-133-wind_low-suspension">OPGW 13,3 · viento zona baja · suspensión</option><option value="lchc-133-wind_low-tension">OPGW 13,3 · viento zona baja · amarre</option><option value="lchc-133-beacons">OPGW 13,3 · vano 798,65 m · 19 balizas</option></optgroup>');
+    const cairoGroup = [...$("preset").querySelectorAll("optgroup")].find((group) => group.label === "AAAC Cairo");
+    if (cairoGroup) {
+      cairoGroup.label = "DOC 109475 - AAAC Cairo";
+      cairoGroup.insertAdjacentHTML("beforeend", '<option value="cairo-schedule">AAAC Cairo - programa real de 42 registros</option>');
+    }
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="DOC N.º 1058 PLP - ACCC Dove / VORTX"><option value="doc1058-undamped">ACCC Dove - vano 350 m sin amortiguadores</option><option value="doc1058-damped">ACCC Dove - vano 350 m / 2 VSD-35</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="DT2495-DIJ211 - San Fabián-Ancoa / antecedentes"><option value="dt2495-acar">ACAR 750 MCM - vano crítico 588,3 m</option><option value="dt2495-flint">AAAC FLINT - cruce Achibueno 743,9 m</option><option value="dt2495-opgw">OPGW 48 fibras - cruce Achibueno 743,9 m</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA13-050612 - AAAC GREELEY"><option value="greeley-undamped-tension">GREELEY - sin amortiguadores / amarre</option><option value="greeley-undamped-suspension">GREELEY - sin amortiguadores / suspensión</option><option value="greeley-125">GREELEY - vano 125 m</option><option value="greeley-250">GREELEY - vano 250 m</option><option value="greeley-350">GREELEY - vano 350 m</option><option value="greeley-500">GREELEY - vano 500 m</option><option value="greeley-350-beacons">GREELEY - vano 350 m con balizas</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA15-121816 Rev.1 - ACAR 1000 MCM dúplex"><option value="acar1000-undamped">ACAR 1000 - vano 400 m / solo SPA450DA30</option><option value="acar1000-118">ACAR 1000 - vano 118 m / amarre</option><option value="acar1000-300">ACAR 1000 - vano 300 m / suspensión</option><option value="acar1000-300-rods">ACAR 1000 - vano 300 m / suspensión con varillas</option><option value="acar1000-550">ACAR 1000 - vano 550 m / sistema completo</option><option value="acar1000-630-rods">ACAR 1000 - vano 630 m / con varillas</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA15-121818 Rev.1 - OPGW ZTT Ø20,6"><option value="ea15opgw-undamped">OPGW ZTT 20,6 - sin amortiguadores</option><option value="ea15opgw-250">OPGW ZTT 20,6 - vano 250 m</option><option value="ea15opgw-500">OPGW ZTT 20,6 - vano 500 m</option><option value="ea15opgw-630">OPGW ZTT 20,6 - vano 630 m</option><option value="ea15opgw-500-beacons">OPGW ZTT 20,6 - vano 500 m con balizas</option></optgroup>');
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="EA16-111644 / pie EA16-111611 - ACAR 500 MCM dúplex"><option value="acar500-undamped">ACAR 500 MCM - vano 400 m / solo SPA450DA21</option><option value="acar500-170">ACAR 500 MCM - vano 170 m / sistema completo</option><option value="acar500-450-bare">ACAR 500 MCM - 450 m / suspensión sin varillas</option><option value="acar500-450-rods">ACAR 500 MCM - 450 m / suspensión con varillas</option></optgroup>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="acar500">EA16-111644 / ACAR 500 MCM dúplex / SPA450DA21 + AMG091526</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="tr792">TR 792 / AAC JESSAMINE dúplex / DAMP + MOSDORFER</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="acar1000">EA15-121816 / ACAR 1000 MCM / SPA450DA30 + AMG152429</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="ea15opgw">EA15-121818 / OPGW ZTT / sin balizas</option><option value="ea15opgw_beacons">EA15-121818 / OPGW ZTT / con balizas</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="greeley">EA13-050612 / AAAC GREELEY / sin balizas</option><option value="greeley_beacons">EA13-050612 / AAAC GREELEY / con balizas</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="doc1058">DOC N.º 1058 PLP / ACCC Dove / VSD-35</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="lchc">LCHC-500-E-ES-008 / OPGW / SALVI 4M</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="lchc007">LCHC-500-E-ES-007 / ACAR 700 cuádruple / SALVI 3931</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="lab">02042-13-L / ACAR 350 MCM / AMG050920</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="ec0016">EC-90.0016 / Cu 1/0 AWG / no requiere</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="charrua">EA11 Ancoa-Alto Jahuel / Stockbridge AMG</option><option value="charrua_bundle">EA11-060311 / ACAR 700 / SPA450CA25</option>');
+    $("recommendationRule").options[0].insertAdjacentHTML("afterend", '<option value="farellon">CL28-1268 / Farellón-Cerro Tigre / Stockbridge SD</option>');
+    $("family").addEventListener("change", () => { filterCatalog(); updateRecommendation(); });
+    $("diam").addEventListener("input", () => { filterCatalog(); updateRecommendation(); });
+    $("tension").addEventListener("input", updateRecommendation);
+    $("span").addEventListener("input", () => { syncSliderFromInput(); updateRecommendation(); });
+    $("spanSlider").addEventListener("input", () => { $("span").value = $("spanSlider").value; $("spanValue").textContent = `${$("spanSlider").value} m`; updateRecommendation(); });
+    $("recommendationRule").addEventListener("change", updateRecommendation);
+    $("analysisMode").addEventListener("change", changeAnalysisMode);
+    $("supportType").addEventListener("change", updateRecommendation);
+    $("supportTypeB").addEventListener("change", updateRecommendation);
+    $("openDiagramZoom").addEventListener("click", openDiagramZoom);
+    $("installationDiagram").addEventListener("dblclick", openDiagramZoom);
+    $("zoomIn").addEventListener("click", () => changeDiagramZoom(0.25));
+    $("zoomOut").addEventListener("click", () => changeDiagramZoom(-0.25));
+    $("zoomReset").addEventListener("click", () => changeDiagramZoom(0));
+    $("closeDiagram").addEventListener("click", () => $("diagramDialog").close());
+    $("applyRecommendation").addEventListener("click", applyRecommendation);
+    $("catalog").addEventListener("change", updateCatalogPreview);
+    $("catalogToggle").addEventListener("click", () => {
+      const opening = $("catalogMenu").hidden;
+      $("catalogMenu").hidden = !opening;
+      $("catalogToggle").setAttribute("aria-expanded", String(opening));
+    });
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".catalog-picker")) {
+        $("catalogMenu").hidden = true;
+        $("catalogToggle").setAttribute("aria-expanded", "false");
+      }
+    });
+    $("add").addEventListener("click", addDamper);
+    $("clear").addEventListener("click", clearStudy);
+    $("calc").addEventListener("click", calculateStudy);
+    $("download").addEventListener("click", downloadCsv);
+    $("loadPreset").addEventListener("click", loadPreset);
+    syncSliderFromInput();
+    loadCatalog().then(() => setStatus(`Catálogo cargado: ${catalog.length} accesorios disponibles.`, "ok")).catch((error) => setStatus(error.message, "bad"));
+  });
+})();

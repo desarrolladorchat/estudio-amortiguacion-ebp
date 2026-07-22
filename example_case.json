@@ -1,0 +1,16 @@
+{
+  "span_m": 450,
+  "conductor": {
+    "diameter_m": 0.01684,
+    "mass_kg_m": 0.785,
+    "tension_n": 14000,
+    "bending_stiffness_nm2": 25.0,
+    "self_damping_H": 0.00002,
+    "self_damping_n": -0.8,
+    "self_damping_m": 2.0
+  },
+  "endpoint_limit_microstrain": 150,
+  "damper_limit_microstrain": 75,
+  "damper_safety_factor": 1.5,
+  "dampers": []
+}

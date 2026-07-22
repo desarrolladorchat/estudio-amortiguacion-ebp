@@ -1,0 +1,15 @@
+[
+  {"reference":"SD-0302-D13","code":"10899","clamp_large":"SD-D13","clamp_small":"DMP-3","diameter_min_mm":7,"diameter_max_mm":13,"mass_kg":1.83},
+  {"reference":"SD-0302-D20","code":"10898","clamp_large":"SD-D20","clamp_small":"DMP-2","diameter_min_mm":13,"diameter_max_mm":20,"mass_kg":1.89},
+  {"reference":"SD-0302-D27","code":"10897","clamp_large":"SD-D27","clamp_small":"DMP-2","diameter_min_mm":20,"diameter_max_mm":37,"mass_kg":1.93},
+  {"reference":"SD-0403-Ø20","code":"10561","clamp_large":"SD-Ø20","clamp_small":"DMP-3","diameter_min_mm":13,"diameter_max_mm":20,"mass_kg":3.03},
+  {"reference":"SD-0403-Ø27","code":"10562","clamp_large":"SD-Ø27","clamp_small":"DMP-3","diameter_min_mm":20,"diameter_max_mm":37,"mass_kg":3.07},
+  {"reference":"SD-0403-Ø34","code":"10563","clamp_large":"SD-Ø34","clamp_small":"DMP-3","diameter_min_mm":27,"diameter_max_mm":34,"mass_kg":3.13},
+  {"reference":"SD-0403-Ø44","code":"10896","clamp_large":"SD-Ø44","clamp_small":"DMP-3","diameter_min_mm":34,"diameter_max_mm":44,"mass_kg":3.21},
+  {"reference":"SD-0504-Ø20","code":"10558","clamp_large":"SD-Ø20","clamp_small":"DMP-4","diameter_min_mm":13,"diameter_max_mm":20,"mass_kg":4.23},
+  {"reference":"SD-0504-Ø27","code":"10559","clamp_large":"SD-Ø27","clamp_small":"DMP-4","diameter_min_mm":20,"diameter_max_mm":27,"mass_kg":4.27},
+  {"reference":"SD-0504-Ø34","code":"10560","clamp_large":"SD-Ø34","clamp_small":"DMP-4","diameter_min_mm":27,"diameter_max_mm":34,"mass_kg":4.33},
+  {"reference":"SD-0504-Ø44","code":"10895","clamp_large":"SD-Ø44","clamp_small":"DMP-4","diameter_min_mm":34,"diameter_max_mm":44,"mass_kg":4.41},
+  {"reference":"SD-0605-Ø34","code":"10557","clamp_large":"SD-Ø34","clamp_small":"DMP-5","diameter_min_mm":27,"diameter_max_mm":34,"mass_kg":6.39},
+  {"reference":"SD-0605-Ø44","code":"10894","clamp_large":"SD-Ø44","clamp_small":"DMP-5","diameter_min_mm":34,"diameter_max_mm":44,"mass_kg":6.42}
+]

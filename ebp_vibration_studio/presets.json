@@ -1,0 +1,102 @@
+{
+  "cochin": {
+    "label": "EA11-102118 - ACSR COCHIN",
+    "source_note": "Datos visibles en páginas 7-14; curva de amortiguador SAPREM no incluida.",
+    "span_m": 350,
+    "frequency": {"start_hz": 11, "stop_hz": 55, "step_hz": 1},
+    "conductor": {
+      "name": "ACSR COCHIN",
+      "diameter_m": 0.01686,
+      "outer_wire_diameter_m": 0.00337,
+      "mass_kg_m": 0.7852,
+      "tension_n": 14000,
+      "ei_nm2": 121.95
+    },
+    "self_damping": {
+      "h_si": 586.275195,
+      "legacy_damping_joules": 136321.76,
+      "legacy_scale": 0.0043007,
+      "wavelength_exp": 4.35,
+      "amplitude_exp": 2.35
+    },
+    "wind": {"turbulence_percent": 7, "power_factor": 0.846, "frequency_correction": [[11,0.84],[13,1.0],[20,0.42],[26,0.116],[40,0.005],[54,0.0001],[55,0.0]], "strouhal": 0.185, "minimum_velocity_m_s": 0.95, "maximum_velocity_m_s": 5.0, "function": "IEC Annex C / proxy Variable-2"},
+    "termination": {"type": "amarre", "strain_factor": 1.697, "armor_rods_factor": 1.0, "damper_clamp_ratio": 0.28},
+    "limits": {"clamp_microstrain": 150, "damper_microstrain": 75},
+    "dampers_enabled": true,
+    "dampers": [{
+      "name": "AMG050920 - curva proxy",
+      "position_m": 1.0,
+      "reference_velocity_m_s": 0.1,
+      "safety_factor": 1.5,
+      "power_curve": [[8,0.0],[11,0.0012],[15,0.0044],[20,0.0076],[26,0.0062],[35,0.0034],[45,0.0012],[55,0.0]]
+    }],
+    "reference": {"undamped_peak_microstrain": 375, "undamped_peak_hz": 13, "unsafe_to_hz": 26}
+  },
+  "greeley": {
+    "label": "EA13-050612 - AAAC GREELEY",
+    "source_note": "Datos visibles en páginas 7-16; curva AMG152429 aproximada.",
+    "span_m": 350,
+    "frequency": {"start_hz": 7, "stop_hz": 60, "step_hz": 1},
+    "conductor": {
+      "name": "AAAC GREELEY",
+      "diameter_m": 0.02815,
+      "outer_wire_diameter_m": 0.00402,
+      "mass_kg_m": 1.295,
+      "tension_n": 30330,
+      "ei_nm2": 777.66
+    },
+    "self_damping": {
+      "h_si": 861.565624,
+      "legacy_damping_joules": 393835.5,
+      "legacy_scale": 0.0021876,
+      "wavelength_exp": 4.35,
+      "amplitude_exp": 2.35
+    },
+    "wind": {"turbulence_percent": 7, "power_factor": 0.846, "frequency_correction": [[7,0.235],[12,0.62],[17,1.0],[25,0.40],[34,0.105],[43,0.032],[50,0.010],[60,0.001]], "strouhal": 0.185, "minimum_velocity_m_s": 0.95, "maximum_velocity_m_s": 7.0, "function": "IEC Annex C / proxy Variable-2"},
+    "termination": {"type": "amarre", "strain_factor": 1.847, "armor_rods_factor": 1.0, "damper_clamp_ratio": 0.30},
+    "limits": {"clamp_microstrain": 150, "damper_microstrain": 75},
+    "dampers_enabled": true,
+    "dampers": [{
+      "name": "AMG152429 - curva proxy",
+      "position_m": 1.36,
+      "reference_velocity_m_s": 0.1,
+      "safety_factor": 1.5,
+      "power_curve": [[5,0.0],[7,0.0008],[12,0.0036],[18,0.0096],[24,0.0068],[32,0.0034],[40,0.0016],[60,0.0]]
+    }],
+    "reference": {"undamped_peak_microstrain": 650, "undamped_peak_hz": 17, "unsafe_to_hz": 43}
+  },
+  "acar1000_duplex": {
+    "label": "EA15-121816 - ACAR 1000 MCM DUPLEX",
+    "source_note": "Aproximación por subconductor. El solver matricial 2N y las rótulas SPA450DA no están publicados.",
+    "span_m": 400,
+    "frequency": {"start_hz": 6, "stop_hz": 60, "step_hz": 0.5},
+    "conductor": {
+      "name": "ACAR 1000MCM 33+4",
+      "diameter_m": 0.02923,
+      "outer_wire_diameter_m": 0.004176,
+      "mass_kg_m": 1.397,
+      "tension_n": 23300,
+      "ei_nm2": 908.15
+    },
+    "self_damping": {
+      "h_si": 1920.366558,
+      "legacy_damping_joules": 497859.76,
+      "legacy_scale": 0.0038572,
+      "wavelength_exp": 4.35,
+      "amplitude_exp": 2.35
+    },
+    "wind": {"turbulence_percent": 7, "power_factor": 0.74, "frequency_correction": [[6,0.28],[10,1.0],[15,0.55],[21,0.10],[30,0.02],[45,0.002],[60,0.0]], "strouhal": 0.185, "minimum_velocity_m_s": 0.95, "maximum_velocity_m_s": 7.0, "function": "IEC Annex C / bundle proxy"},
+    "termination": {"type": "haz equivalente", "strain_factor": 2.64, "armor_rods_factor": 1.0, "damper_clamp_ratio": 0.32},
+    "limits": {"clamp_microstrain": 150, "damper_microstrain": 75},
+    "dampers_enabled": true,
+    "dampers": [{
+      "name": "AMG152429 - curva proxy",
+      "position_m": 1.1,
+      "reference_velocity_m_s": 0.1,
+      "safety_factor": 1.5,
+      "power_curve": [[5,0.0],[7,0.0024],[12,0.0108],[18,0.0288],[24,0.0204],[32,0.0102],[40,0.0048],[60,0.0]]
+    }],
+    "bundle": {"subconductors": 2, "spacing_m": 0.45, "subspan_lengths_m": [32,53,58,52,58,52,59,36], "approximation": true},
+    "reference": {"undamped_peak_microstrain": 485, "unsafe_band_hz": [6,21]}
+  }
+}

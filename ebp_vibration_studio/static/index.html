@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EBP Vibration Studio</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <div class="eyebrow">IEC 61897 · ENERGY BALANCE PRINCIPLE</div>
+      <h1>EBP Vibration Studio</h1>
+      <p>Vibración eólica de conductores, potencia y verificación de amortiguadores.</p>
+    </div>
+    <div class="header-actions">
+      <button id="printBtn" class="ghost">Imprimir informe</button>
+      <button id="exportBtn" class="ghost">Exportar CSV</button>
+      <button id="solveBtn">Calcular espectro</button>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <label class="field full"><span>Caso de referencia</span><select id="preset"></select></label>
+      <div id="sourceNote" class="note"></div>
+
+      <section>
+        <h2>Conductor y vano</h2>
+        <div class="grid2">
+          <label class="field"><span>Vano (m)</span><input data-path="span_m" type="number" step="1"></label>
+          <label class="field"><span>Tensión (kN)</span><input data-path="conductor.tension_n" data-scale="1000" type="number" step="0.01"></label>
+          <label class="field"><span>Diámetro (mm)</span><input data-path="conductor.diameter_m" data-scale="0.001" type="number" step="0.01"></label>
+          <label class="field"><span>Masa (kg/m)</span><input data-path="conductor.mass_kg_m" type="number" step="0.001"></label>
+          <label class="field"><span>Rigidez EI (N·m²)</span><input data-path="conductor.ei_nm2" type="number" step="0.01"></label>
+          <label class="field"><span>Hilo exterior (mm)</span><input data-path="conductor.outer_wire_diameter_m" data-scale="0.001" type="number" step="0.001"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Ambiente y barrido</h2>
+        <div class="grid2">
+          <label class="field"><span>Turbulencia (%)</span><input data-path="wind.turbulence_percent" type="number" step="1"></label>
+          <label class="field"><span>Factor potencia</span><input data-path="wind.power_factor" type="number" step="0.01"></label>
+          <label class="field"><span>Frecuencia inicial</span><input data-path="frequency.start_hz" type="number" step="0.1"></label>
+          <label class="field"><span>Frecuencia final</span><input data-path="frequency.stop_hz" type="number" step="0.1"></label>
+          <label class="field"><span>Paso (Hz)</span><input data-path="frequency.step_hz" type="number" step="0.1"></label>
+          <label class="field"><span>Factor deformación</span><input data-path="termination.strain_factor" type="number" step="0.1"></label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Amortiguador</h2>
+        <label class="toggle"><input id="damperEnabled" type="checkbox"><span></span>Incluir amortiguador</label>
+        <div class="grid2">
+          <label class="field"><span>Posición (m)</span><input data-path="dampers.0.position_m" type="number" step="0.01"></label>
+          <label class="field"><span>Factor seguridad</span><input data-path="dampers.0.safety_factor" type="number" step="0.1"></label>
+          <label class="field"><span>Límite grapa (με)</span><input data-path="limits.clamp_microstrain" type="number" step="5"></label>
+          <label class="field"><span>Límite amort. (με)</span><input data-path="limits.damper_microstrain" type="number" step="5"></label>
+        </div>
+        <button id="optimizeBtn" class="secondary full">Optimizar posición 0,4–2,0 m</button>
+      </section>
+    </aside>
+
+    <div class="content">
+      <div class="cards">
+        <article><span>Máxima deformación</span><strong id="maxStrain">—</strong><small>microdeformaciones, 0–pico</small></article>
+        <article><span>Frecuencia crítica</span><strong id="criticalFrequency">—</strong><small id="criticalWind">—</small></article>
+        <article id="safeCard"><span>Evaluación</span><strong id="safeState">—</strong><small id="unsafePoints">—</small></article>
+        <article><span>Posición amortiguador</span><strong id="damperPosition">—</strong><small id="optimizationText">editable / optimizable</small></article>
+      </div>
+
+      <section class="panel chart-panel">
+        <div class="panel-title">
+          <div><span class="eyebrow">RESPUESTA ESPECTRAL</span><h2>Deformación y amplitud</h2></div>
+          <div class="legend"><i class="black"></i>Grapa <i class="green"></i>Grapa amort. <i class="red"></i>Amplitud amort.</div>
+        </div>
+        <svg id="chart" viewBox="0 0 980 430" role="img" aria-label="Espectro de deformación"></svg>
+      </section>
+
+      <div class="twocol">
+        <section class="panel">
+          <div class="panel-title"><div><span class="eyebrow">BALANCE</span><h2>Potencias en frecuencia crítica</h2></div></div>
+          <div id="powerBars" class="power-bars"></div>
+          <div class="equation">P<sub>w</sub>·L = P<sub>s</sub>·L + ΣP<sub>d</sub></div>
+        </section>
+        <section class="panel">
+          <div class="panel-title"><div><span class="eyebrow">TRAZABILIDAD</span><h2>Supuestos activos</h2></div></div>
+          <ul id="assumptions"></ul>
+        </section>
+      </div>
+
+      <section class="panel table-panel">
+        <div class="panel-title"><div><span class="eyebrow">RESULTADOS</span><h2>Tabla de cálculo</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>f (Hz)</th><th>Viento (m/s)</th><th>λ (m)</th><th>Y/D</th><th>Grapa (με)</th><th>Grapa amort. (με)</th><th>Amplitud amort. (mm)</th><th>Pw (W)</th><th>Ps (W)</th><th>Pd (W)</th><th>Estado</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+      </section>
+    </div>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
