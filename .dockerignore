@@ -1,0 +1,13 @@
+.git
+.gitignore
+.htaccess
+__pycache__
+*.py
+*.pyc
+*.md
+*.csv
+*.bat
+ebp_vibration_studio
+example_*
+results.csv
+

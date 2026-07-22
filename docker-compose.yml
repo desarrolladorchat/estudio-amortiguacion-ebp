@@ -1,0 +1,10 @@
+services:
+  estudio-amortiguacion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: estudio-amortiguacion-ebp
+    restart: unless-stopped
+    ports:
+      - "8085:80"
+

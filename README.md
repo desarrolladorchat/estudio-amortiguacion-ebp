@@ -12,6 +12,16 @@ python -m http.server 8000
 
 Luego abra `http://127.0.0.1:8000/`.
 
+## Despliegue con Docker
+
+La imagen de producción usa Nginx y solo incorpora los archivos requeridos por la web:
+
+```bash
+docker compose up -d --build
+```
+
+La aplicación queda disponible en el puerto `8085` del servidor. Puede cambiar el puerto del lado izquierdo en `docker-compose.yml` si ya está ocupado.
+
 ## Contenido principal
 
 - `index.html`: interfaz del simulador.
