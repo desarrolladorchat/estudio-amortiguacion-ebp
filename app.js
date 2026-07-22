@@ -18,6 +18,8 @@
     amortiguador_FR: "assets/amortiguador-fr2-ztt-product.png",
     amortiguador_SAPREM_AMG: "assets/amortiguador-saprem-amg.png",
     amortiguador_FR3: "assets/amortiguador-fr3-ztt.png",
+    amortiguador_FRY: "assets/amortiguador-fr3-ztt.png",
+    separador_amortiguador_FJZ: "assets/fjz-245-28d-ztt.png",
     amortiguador_PLP_VORTX: "assets/amortiguador-plp-vortx-product.jpg",
     amortiguador_SALVI_4M: "assets/amortiguador-salvi-4m-installation.png",
     separador_amortiguador_SALVI: "assets/spa-ca.png",
@@ -349,6 +351,38 @@
       motion: [[6,.28],[10,.52],[14,.62],[18,.78],[22,.76],[26,.50],[32,.28],[40,.16],[50,.08],[60,0]]
     }
   };
+  // Casos documentales incorporados en julio de 2026. Las series "curve" son
+  // anclas digitalizadas de las figuras TECNOSOFT; "schedule" conserva una
+  // pauta comercial y no se presenta como un balance de energia publicado.
+  const BATCH2_CASES = {
+    "tar-acar700-bare": { source:"Arrangement of Spacer for conductor (1).pdf", label:"ACAR 700 MCM duplex - sin FR-3", kind:"curve", span:271.12, diameter:24.46, mass:.9775, tension:11.77, ei:0, H:.0003296, fmin:8, fmax:65, model:"FR-3", family:"amortiguador_FR3", quantity:0, first:1.05, spacing:1.05, strain:[[8,210],[12,360],[18,490],[24,520],[30,430],[40,260],[50,155],[60,85],[65,0]], accessory:[[8,125],[15,208],[25,170],[40,90],[60,30],[65,0]], motion:[[8,1.0],[15,1.25],[25,.9],[40,.45],[65,0]], note:"Haz duplex con FJZ-240/24; subvanos de referencia 47,3 + 72,7 + 63,6 + 70,9 + 45,5 m." },
+    "tar-acar700-damped": { source:"Arrangement of Spacer for conductor (1).pdf", label:"ACAR 700 MCM duplex - FJZ + FR-3", kind:"curve", span:271.12, diameter:24.46, mass:.9775, tension:11.77, ei:0, H:.0003296, fmin:8, fmax:65, model:"FR-3", family:"amortiguador_FR3", quantity:2, first:1.05, spacing:1.05, strain:[[8,48],[14,72],[22,63],[30,50],[40,35],[55,18],[65,0]], accessory:[[8,22],[18,43],[28,34],[45,18],[65,0]], motion:[[8,.35],[16,.72],[25,.55],[40,.3],[65,0]], note:"Recomendacion del PDF: un FR-3 por extremo y separadores amortiguadores simultaneamente; L < 450 m." },
+    "ea24-acar1000-335": { source:"EA24-conductor-022813.pdf", label:"ACAR 1000 MCM cuadruple - vano 335 m", kind:"bundle", span:335, diameter:29.23, mass:1.393, tension:24.25, ei:599.67, H:340049.31, fmin:7, fmax:90, model:"SPA450CA30", family:"SPA450CA", quantity:5, first:32, spacing:63, strain:[[7,20],[14,42],[24,68],[34,55],[50,28],[70,12],[90,0]], accessory:[[7,8],[18,22],[28,31],[45,20],[70,8],[90,0]], motion:[[7,.12],[20,.32],[32,.42],[50,.2],[90,0]], note:"Solo separadores-amortiguadores SPA450CA30; el informe concluye que no requiere Stockbridge." },
+    "ea24-acar1000-406": { source:"EA24-conductor-022813.pdf", label:"ACAR 1000 MCM cuadruple - vano 406 m", kind:"bundle", span:406, diameter:29.23, mass:1.393, tension:24.25, ei:599.67, H:340049.31, fmin:7, fmax:90, model:"SPA450CA30", family:"SPA450CA", quantity:6, first:32, spacing:63, strain:[[7,24],[14,46],[24,72],[34,58],[50,31],[70,13],[90,0]], accessory:[[7,9],[18,24],[28,33],[45,22],[70,9],[90,0]], motion:[[7,.14],[20,.35],[32,.45],[50,.22],[90,0]], note:"Vano maximo del estudio; subvano interior maximo 68 m y extremos nominales 32/36 m." },
+    "ea24-opgw-bare": { source:"EA24-opgw-022814.pdf", label:"OPGW 13,6 - sin AMG050926", kind:"curve", span:406, diameter:13.6, mass:.543, tension:9.365, ei:186.55, H:20748.84, fmin:10, fmax:80, model:"AMG-050926", family:"amortiguador_SAPREM_AMG", quantity:0, first:.8, spacing:.6, strain:[[10,190],[14,293],[20,420],[29,521],[38,360],[50,230],[62,150],[75,70],[80,0]], accessory:[[10,0],[80,0]], motion:[[10,0],[80,0]], note:"Control publicado: 293 microstrain a 14 Hz, maximo 521 a 29 Hz y banda sobre 150 hasta 62 Hz." },
+    "ea24-opgw-350": { source:"EA24-opgw-022814.pdf", label:"OPGW 13,6 - vano 350 m / AMG050926", kind:"curve", span:350, diameter:13.6, mass:.543, tension:9.365, ei:186.55, H:20748.84, fmin:10, fmax:80, model:"AMG-050926", family:"amortiguador_SAPREM_AMG", quantity:2, first:.8, spacing:.6, strain:[[10,15],[18,32],[28,64],[38,57],[50,35],[65,18],[80,0]], accessory:[[10,8],[22,24],[32,45],[45,30],[65,12],[80,0]], motion:[[10,.08],[22,.22],[32,.45],[45,.3],[80,0]], note:"Un amortiguador por suspension; en amarres preformados el PDF agrega una unidad adicional." },
+    "ea24-opgw-406": { source:"EA24-opgw-022814.pdf", label:"OPGW 13,6 - vano 406 m / AMG050926", kind:"curve", span:406, diameter:13.6, mass:.543, tension:9.365, ei:186.55, H:20748.84, fmin:10, fmax:80, model:"AMG-050926", family:"amortiguador_SAPREM_AMG", quantity:4, first:.8, spacing:.6, strain:[[10,10],[18,18],[28,29],[38,24],[50,15],[65,8],[80,0]], accessory:[[10,5],[22,12],[32,20],[45,14],[65,6],[80,0]], motion:[[10,.04],[22,.1],[32,.2],[45,.13],[80,0]], note:"Para 350 < L <= 406 m se instala una unidad a cada lado; el amarre preformado agrega una unidad por lado." },
+    "ztt-opgw128-17": { source:"Vibration Study for OPGW 12.8mm 4D-20 Rev2.pdf", label:"OPGW 12,1 / 4D-20 - tabla EDS 17%", kind:"schedule", span:500, diameter:12.1, mass:.394, tension:8.45, ei:0, H:0, fmin:0, fmax:1000, model:"4D-20", family:"amortiguador_4D", first:.08, spacing:.58, schedule:[[0,2],[250,2],[500,4],[800,6],[1000,8]], note:"Documento de pauta sin curvas: primera unidad 50-80 mm despues de las varillas y las siguientes cada 0,58 m." },
+    "ztt-acar900-19": { source:"Vibration Study for ACAR 900MCM FR-3 Rev2.pdf", label:"ACAR 900 MCM / FR-3 - EDS 19%", kind:"schedule", span:450, diameter:27.73, mass:1.257, tension:19.19, ei:0, H:0, fmin:0, fmax:1200, model:"FR-3", family:"amortiguador_FR3", first:1.56, spacing:1.42, schedule:[[0,2],[450,2],[900,4],[1200,6]], note:"Documento de pauta sin curvas: L1=1,42 m directo o 1,56 m sobre varillas; unidades siguientes a 1,42 m." },
+    "ztt-acar900-24": { source:"Vibration Study for ACAR 900MCM FR-3 Rev2.pdf", label:"ACAR 900 MCM / FR-3 - EDS 24%", kind:"schedule", span:900, diameter:27.73, mass:1.257, tension:24.24, ei:0, H:0, fmin:0, fmax:1200, model:"FR-3", family:"amortiguador_FR3", first:1.76, spacing:1.6, schedule:[[0,2],[450,2],[900,4],[1200,6]], note:"Documento de pauta sin curvas: L1=1,60 m directo o 1,76 m sobre varillas; unidades siguientes a 1,60 m." },
+    "ztt-opgw118-bare": { source:"Vibration Study for OPGW 11.80mm .pdf", label:"OPGW 11,80 - sin 4D-20", kind:"curve", span:250, diameter:11.8, mass:.36, tension:7.25, ei:43.68, H:11712.82, fmin:15, fmax:120, model:"4D-20", family:"amortiguador_4D", quantity:0, first:.82, spacing:.58, strain:[[15,140],[25,260],[40,345],[50,300],[65,175],[80,95],[100,45],[120,20]], accessory:[[15,0],[120,0]], motion:[[15,0],[120,0]], note:"Curva TECNOSOFT publicada sin sistema de amortiguamiento." },
+    "ztt-opgw118-250": { source:"Vibration Study for OPGW 11.80mm .pdf", label:"OPGW 11,80 - vano 250 m / 2 x 4D-20", kind:"curve", span:250, diameter:11.8, mass:.36, tension:7.25, ei:43.68, H:11712.82, fmin:15, fmax:120, model:"4D-20", family:"amortiguador_4D", quantity:2, first:.82, spacing:.58, strain:[[15,0],[50,0],[65,42],[80,60],[95,72],[105,100],[112,45],[120,65]], accessory:[[15,0],[60,35],[75,45],[95,10],[105,0],[120,10]], motion:[[15,0],[65,.35],[80,.55],[95,.2],[120,.1]], note:"Una unidad por extremo a 0,82 m; curva publicada para 250 m." },
+    "ztt-opgw118-500": { source:"Vibration Study for OPGW 11.80mm .pdf", label:"OPGW 11,80 - vano 500 m / 4 x 4D-20", kind:"curve", span:500, diameter:11.8, mass:.36, tension:7.25, ei:43.68, H:11712.82, fmin:15, fmax:120, model:"4D-20", family:"amortiguador_4D", quantity:4, first:.82, spacing:.58, strain:[[15,0],[30,5],[45,0],[60,10],[75,18],[90,22],[105,12],[120,20]], accessory:[[15,0],[60,35],[75,62],[90,48],[105,20],[120,10]], motion:[[15,0],[60,.2],[75,.45],[90,.3],[120,.08]], note:"Dos unidades por extremo: 0,82 m y 0,58 m de separacion." },
+    "ztt-opgw118-800": { source:"Vibration Study for OPGW 11.80mm .pdf", label:"OPGW 11,80 - vano 800 m / 6 x 4D-20", kind:"curve", span:800, diameter:11.8, mass:.36, tension:7.25, ei:43.68, H:11712.82, fmin:15, fmax:120, model:"4D-20", family:"amortiguador_4D", quantity:6, first:.82, spacing:.58, strain:[[15,0],[35,5],[50,12],[65,10],[80,14],[95,10],[110,12],[120,18]], accessory:[[15,0],[45,28],[60,22],[75,68],[90,50],[110,25],[120,10]], motion:[[15,0],[50,.18],[75,.48],[95,.22],[120,.08]], note:"Tres unidades por extremo; tercera unidad a otros 0,58 m." },
+    "ztt-opgw118-1000": { source:"Vibration Study for OPGW 11.80mm .pdf", label:"OPGW 11,80 - vano 1000 m / 8 x 4D-20", kind:"curve", span:1000, diameter:11.8, mass:.36, tension:7.25, ei:43.68, H:11712.82, fmin:15, fmax:120, model:"4D-20", family:"amortiguador_4D", quantity:8, first:.82, spacing:.58, strain:[[15,0],[30,8],[45,12],[60,10],[75,14],[90,8],[110,10],[120,18]], accessory:[[15,0],[40,35],[60,38],[75,75],[90,52],[110,25],[120,10]], motion:[[15,0],[50,.2],[75,.5],[95,.25],[120,.08]], note:"Cuatro unidades por extremo; caso limite de la tabla del fabricante." },
+    "ztt-greeley-bare": { source:"Vibration Study for AAAC Greeley.pdf", label:"AAAC Greeley - sin FRY-3/5", kind:"curve", span:450, diameter:28.14, mass:1.289, tension:22.95, ei:776.88, H:451421.99, fmin:6, fmax:50, model:"FRY-3/5", family:"amortiguador_FRY", quantity:0, first:1.72, spacing:1.56, strain:[[6,220],[10,330],[14,365],[18,300],[24,170],[32,85],[42,35],[50,0]], accessory:[[6,0],[50,0]], motion:[[6,0],[50,0]], note:"Curva TECNOSOFT publicada sin sistema de amortiguamiento." },
+    "ztt-greeley-450": { source:"Vibration Study for AAAC Greeley.pdf", label:"AAAC Greeley - vano 450 m / 2 x FRY-3/5", kind:"curve", span:450, diameter:28.14, mass:1.289, tension:22.95, ei:776.88, H:451421.99, fmin:6, fmax:50, model:"FRY-3/5", family:"amortiguador_FRY", quantity:2, first:1.72, spacing:1.56, strain:[[6,45],[10,55],[14,88],[18,70],[24,42],[32,45],[42,33],[50,0]], accessory:[[6,20],[12,50],[18,38],[28,20],[42,10],[50,0]], motion:[[6,.2],[12,.45],[18,.3],[30,.15],[50,0]], note:"Una unidad por extremo; primera unidad a 1,72 m sobre varillas." },
+    "ztt-greeley-900": { source:"Vibration Study for AAAC Greeley.pdf", label:"AAAC Greeley - vano 900 m / 4 x FRY-3/5", kind:"curve", span:900, diameter:28.14, mass:1.289, tension:22.95, ei:776.88, H:451421.99, fmin:6, fmax:50, model:"FRY-3/5", family:"amortiguador_FRY", quantity:4, first:1.72, spacing:1.56, strain:[[6,50],[10,45],[15,35],[19,88],[24,42],[34,28],[43,35],[50,0]], accessory:[[6,20],[13,35],[19,55],[26,22],[40,10],[50,0]], motion:[[6,.18],[15,.35],[19,.48],[30,.18],[50,0]], note:"Dos unidades por extremo; segunda unidad a 1,56 m de la primera." },
+    "ztt-greeley-1200": { source:"Vibration Study for AAAC Greeley.pdf", label:"AAAC Greeley - vano 1200 m / 6 x FRY-3/5", kind:"curve", span:1200, diameter:28.14, mass:1.289, tension:22.95, ei:776.88, H:451421.99, fmin:6, fmax:50, model:"FRY-3/5", family:"amortiguador_FRY", quantity:6, first:1.72, spacing:1.56, strain:[[6,35],[10,28],[15,24],[19,68],[24,35],[34,22],[43,32],[50,0]], accessory:[[6,15],[13,30],[19,45],[26,20],[40,8],[50,0]], motion:[[6,.15],[15,.3],[19,.4],[30,.15],[50,0]], note:"Tres unidades por extremo; tercera unidad a otros 1,56 m." },
+    "ztt-fjz400": { source:"Spacer Damper FJZ-245-28D for AAAC Greeley (1).pdf", label:"FJZ-245/28D - vano 400 m / 8 subvanos", kind:"subspan", span:400, diameter:28.14, mass:1.289, tension:22.95, ei:776.88, H:451421.99, fmin:0, fmax:8, model:"FJZ-245/28D", family:"separador_amortiguador_FJZ", quantity:7, first:34, spacing:54.5, maxSubspan:63, subspans:[34,57,51,63,57,49,58,31], strain:[[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,0],[8,0]], accessory:[[0,0],[8,0]], motion:[[0,0],[8,0]], note:"Secuencia exacta del grafico TECNOSOFT: 34 + 57 + 51 + 63 + 57 + 49 + 58 + 31 m; siete FJZ forman ocho subvanos." },
+    "ea26-arbutus-bare": { source:"EA26-010911.pdf", label:"AAC ARBUTUS duplex - SPA400DA27 sin AMG", kind:"bundle", span:423, diameter:26.04, mass:1.1095, tension:22.83, ei:599.67, H:355861.26, fmin:7, fmax:90, model:"AMG-091826", family:"amortiguador_SAPREM_AMG", quantity:0, first:1, spacing:.6, strain:[[7,280],[12,480],[18,530],[26,400],[38,220],[55,100],[75,35],[90,0]], accessory:[[7,80],[15,130],[25,100],[40,55],[70,15],[90,0]], motion:[[7,0],[90,0]], note:"Las figuras 1 y 2 muestran que los separadores-amortiguadores solos no cumplen el limite." },
+    "ea26-arbutus-250": { source:"EA26-010911.pdf", label:"AAC ARBUTUS duplex - vano 250 m / AMG091826", kind:"bundle", span:250, diameter:26.04, mass:1.1095, tension:25.74, ei:599.67, H:344009.31, fmin:7, fmax:90, model:"AMG-091826", family:"amortiguador_SAPREM_AMG", quantity:4, first:1, spacing:.6, strain:[[7,8],[14,18],[22,26],[30,22],[45,15],[65,7],[90,0]], accessory:[[7,5],[14,11],[24,18],[36,15],[55,7],[90,0]], motion:[[7,.1],[16,.4],[24,.35],[40,.2],[90,0]], note:"Un AMG por extremo y por subconductor; subvanos 32 + 63 + 57 + 62 + 36 m." },
+    "ea26-arbutus-423": { source:"EA26-010911.pdf", label:"AAC ARBUTUS duplex - vano 423 m / AMG091826", kind:"bundle", span:423, diameter:26.04, mass:1.1095, tension:22.83, ei:599.67, H:355861.26, fmin:7, fmax:90, model:"AMG-091826", family:"amortiguador_SAPREM_AMG", quantity:4, first:1, spacing:.6, strain:[[7,15],[14,28],[22,38],[30,30],[45,20],[65,10],[90,0]], accessory:[[7,8],[14,18],[24,28],[36,20],[55,10],[90,0]], motion:[[7,.2],[16,.75],[24,.65],[40,.3],[90,0]], note:"Un AMG por extremo y por subconductor; subvanos 32 + 57 + 63 + 55 + 61 + 56 + 63 + 36 m." },
+    "ea26-opgw-bare": { source:"EA26-010912.pdf", label:"OPGW 14,05 - sin AMG051126", kind:"curve", span:423, diameter:14.05, mass:.4613, tension:8.09, ei:58.95, H:40472.54, fmin:7, fmax:90, model:"AMG-051126", family:"amortiguador_SAPREM_AMG", quantity:0, first:.6, spacing:.6, strain:[[7,150],[14,240],[22,323],[30,255],[38,150],[50,85],[70,35],[90,0]], accessory:[[7,0],[90,0]], motion:[[7,0],[90,0]], note:"Control publicado: 240 microstrain a 14 Hz, maximo 323 a 22 Hz y banda sobre 150 bajo 38 Hz." },
+    "ea26-opgw-423": { source:"EA26-010912.pdf", label:"OPGW 14,05 - vano 423 m / AMG051126", kind:"curve", span:423, diameter:14.05, mass:.4613, tension:8.09, ei:58.95, H:40472.54, fmin:7, fmax:90, model:"AMG-051126", family:"amortiguador_SAPREM_AMG", quantity:2, first:.6, spacing:.6, strain:[[7,6],[14,12],[22,16],[30,14],[45,8],[65,4],[90,0]], accessory:[[7,3],[14,7],[22,9],[35,6],[60,2],[90,0]], motion:[[7,.03],[14,.08],[22,.1],[40,.06],[90,0]], note:"Una unidad por extremo a 0,60 m; en amarres se agrega una unidad adicional." },
+    "tar-opgw-bare": { source:"Arrangement of Spacer for opgw (1).pdf", label:"OPGW 13,41 - sin 4D-20", kind:"curve", span:333.08, diameter:13.41, mass:.461, tension:7.524, ei:74.81, H:18835.36, fmin:12.33, fmax:105, model:"4D-20", family:"amortiguador_4D", quantity:0, first:.528, spacing:.58, strain:[[12.33,174],[20,329],[31,493],[40,410],[55,199],[70,125],[85,105],[100,83],[105,71]], accessory:[[12.33,0],[105,0]], motion:[[12.33,0],[105,0]], note:"La tabla numerica del PDF alcanza 493,088 microstrain a 31 Hz; ambas grapas AGS." },
+    "tar-opgw-250": { source:"Arrangement of Spacer for opgw (1).pdf", label:"OPGW 13,41 - vano 250 m / 2 x 4D-20", kind:"curve", span:250, diameter:13.41, mass:.461, tension:7.524, ei:74.81, H:18835.36, fmin:12.33, fmax:105, model:"4D-20", family:"amortiguador_4D", quantity:2, first:.528, spacing:.58, strain:[[12.33,0],[35,1],[55,3],[75,4],[95,3],[105,0]], accessory:[[12.33,0],[35,1],[55,2],[75,2],[105,0]], motion:[[12.33,0],[55,.02],[75,.03],[105,0]], note:"Curva publicada con una unidad por extremo a 0,528 m; respuesta practicamente anulada." }
+  };
   let catalog = [];
   let dampers = [];
   let lastRows = [];
@@ -637,6 +671,32 @@
     $("cigreSystemType").value = /^(tr792-|charrua-bundle-|lchc007-|ea26-|acar1000-|acar500-)/.test(key) ? "bundle" : "single";
     $("analysisMode").value = "reference";
     $("cigrePanel").hidden = true;
+    if (key.startsWith("batch2-")) {
+      const data = BATCH2_CASES[key.slice(7)];
+      if (!data) throw new Error("Caso documental de julio de 2026 no reconocido.");
+      const quantity=data.kind==="schedule"?batch2ScheduleQuantity(data,data.span):(data.quantity||0);
+      const bundle = data.kind === "bundle" || data.kind === "subspan";
+      $("cigreSystemType").value = bundle ? "bundle" : "single";
+      Object.entries({span:data.span,diam:data.diameter,mass:data.mass,tension:data.tension,ei:data.ei,H:data.H,sdn:4.35,sdm:2.35,fmin:Math.max(.1,data.fmin),fmax:data.fmax,fstep:data.kind === "schedule" ? 25 : 1,st:.2,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
+      dampers=[];
+      $("family").value=data.family; $("recommendationRule").value="auto"; $("supportType").value="suspension_rods"; $("supportTypeB").value="suspension_rods";
+      currentReference={mode:"batch2",key:key.slice(7),data,title:`${data.label} - ${data.source}`};
+      filterCatalog();
+      const item=catalog.find((entry)=>entry.reference===data.model);
+      if(item && quantity){
+        if(data.kind==="subspan"){
+          let position=0; data.subspans.slice(0,-1).forEach((length,index)=>{position+=length;dampers.push({catalog:item,position:Number(position.toFixed(3)),coef:0,allocationIndex:index+1});});
+        }else{
+          const perSide=Math.ceil(quantity/2),left=Array.from({length:perSide},(_,index)=>Number((data.first+index*data.spacing).toFixed(3)));
+          left.forEach((position)=>dampers.push({catalog:item,position,coef:0}));
+          left.slice(0,Math.floor(quantity/2)).forEach((distance)=>dampers.push({catalog:item,position:Number((data.span-distance).toFixed(3)),coef:0}));
+        }
+      }
+      renderDampers(); syncSliderFromInput(); updateRecommendation();
+      const evidence=data.kind==="schedule"?"Pauta tabulada del fabricante; el PDF no publica una curva vibratoria para este caso.":data.kind==="subspan"?"Distribucion de subvanos y simulacion del separador amortiguador.":"Curva TECNOSOFT digitalizada y contrastada visualmente.";
+      $("referenceInfo").innerHTML=`<strong>${data.label}</strong><br>${data.source} - D ${data.diameter.toFixed(2)} mm - ${data.mass.toFixed(4)} kg/m - tension ${data.tension.toFixed(3)} kN - vano ${data.span.toFixed(2)} m.<br><span class="hint">${data.note} ${evidence} Para recalcular con variables distintas, cambie a EBP CIGRE independiente; la reproduccion PDF conserva las anclas documentales.</span>`;
+      clearResultsOnly();setStatus("Caso documental cargado. Pulse Calcular estudio para reproducir su tabla o figura.","ok");return;
+    }
     if(key.startsWith("tr739-")||key==="tr743-power"){
       const optical=key.startsWith("tr739-"),scenario=optical?key.slice(6):"power",adequate=scenario==="adequate";
       Object.entries(optical?{span:20.015,diam:17.8816,mass:"",tension:25.844,ei:"",H:0,sdn:0,sdm:2,fmin:0,fmax:adequate?22:15,fstep:.1,st:.2,limitEnd:.03,windFactor:1}:{span:250,diam:12.2,mass:"",tension:19.7,ei:"",H:0,sdn:0,sdm:2,fmin:16,fmax:106,fstep:1,st:.185,limitEnd:150,windFactor:1}).forEach(([id,value])=>setValue(id,value));
@@ -1135,6 +1195,15 @@
     const support = $("supportType").value;
     const supportB = $("supportTypeB").value;
     if (!Number.isFinite(span) || span <= 0) return { valid: false, message: "Introduzca un vano válido." };
+    if(currentReference?.mode==="batch2"){
+      const data=currentReference.data;
+      if(data.kind==="subspan"){
+        const scale=span/data.span,subspans=data.subspans.map(value=>Number((value*scale).toFixed(2))),positions=[];let running=0;subspans.slice(0,-1).forEach(value=>{running+=value;positions.push(Number(running.toFixed(2)))});
+        return {valid:true,rule:"batch2",span,total:positions.length,model:data.model,family:data.family,range:`caso documental escalado desde ${data.span} m`,positions,leftDistances:[],rightDistances:[],support,supportB,charruaBundle:true,subspans,installationNote:data.note};
+      }
+      const total=data.kind==="schedule"?batch2ScheduleQuantity(data,span):(data.quantity||0),perSide=Math.ceil(total/2),leftDistances=Array.from({length:perSide},(_,index)=>Number((data.first+index*data.spacing).toFixed(3))),rightDistances=leftDistances.slice(0,Math.floor(total/2)),positions=[...leftDistances,...rightDistances.map(value=>Number((span-value).toFixed(3)))].sort((a,b)=>a-b);
+      return {valid:true,rule:"batch2",span,total,perSide,first:data.first,spacing:data.spacing,model:data.model,family:data.family,range:data.kind==="schedule"?"tabla del fabricante":"configuracion de la figura PDF",positions,fromEachEnd:leftDistances,leftDistances,rightDistances,support,supportB,installationNote:data.note};
+    }
     let total = 0, first = 0, spacing = 0, model = "", range = "", family = "";
     if (rule === "tr792") {
       if(Math.abs(diameter-38.69)>.1)return{valid:false,message:`La pauta TR 792 corresponde al AAC JESSAMINE Ø38,69 mm; D actual = ${diameter.toFixed(2)} mm.`};
@@ -2030,6 +2099,9 @@
 
       if (!currentReference && $("analysisMode").value === "reference") throw new Error("Seleccione y cargue un ejemplo PDF, o cambie el marco de cálculo.");
 
+      if(currentReference?.mode==="batch2"){
+        const rows=batch2Rows(L,D,strouhal);lastRows=rows;renderBatch2Results(rows,limit,L);return;
+      }
       if(currentReference?.mode==="tr792"){
         const rows=tr792Rows(fMin,fMax,step,D,strouhal);lastRows=rows;renderTr792Results(rows,limit);return;
       }
@@ -2166,6 +2238,50 @@
     } catch (error) {
       setStatus(error.message || String(error), "bad");
     }
+  }
+
+  function batch2ScheduleQuantity(data,span){
+    for(let index=1;index<data.schedule.length;index+=1){if(span<=data.schedule[index][0])return data.schedule[index][1];}
+    return data.schedule.at(-1)[1];
+  }
+
+  function batch2Rows(span,diameter,strouhal){
+    const data=currentReference.data;
+    if(data.kind==="schedule")return data.schedule.slice(1).map(([maximum,quantity],index)=>({f:maximum,strain:quantity,damperStrain:0,damperAmplitude:0,amplitudeMm:quantity,batch2:true,batchSchedule:true,minimum:index?data.schedule[index][0]:0}));
+    if(data.kind==="subspan")return data.subspans.map((length,index)=>({f:index+1,strain:length,damperStrain:54.5,damperAmplitude:0,amplitudeMm:length,batch2:true,batchSubspan:true,subspan:index+1}));
+    const rows=[],frequencies=new Set([data.fmin,data.fmax,...data.strain.map(point=>point[0]),...(data.accessory||[]).map(point=>point[0]),...(data.motion||[]).map(point=>point[0])]);
+    for(let f=Math.ceil(data.fmin);f<=data.fmax;f+=1)frequencies.add(f);
+    for(const f of [...frequencies].sort((a,b)=>a-b)){
+      const velocity=f*diameter/strouhal;
+      rows.push({f,velocity,reynolds:velocity*diameter/1.5e-5,strain:curveValue(data.strain,f),damperStrain:curveValue(data.accessory||[[data.fmin,0],[data.fmax,0]],f),damperAmplitude:curveValue(data.motion||[[data.fmin,0],[data.fmax,0]],f),antinodeAmplitude:0,amplitudeMm:curveValue(data.motion||[[data.fmin,0],[data.fmax,0]],f),batch2:true,batchSource:data.source});
+    }
+    return rows;
+  }
+
+  function renderBatch2Results(rows,limit,span){
+    const data=currentReference.data;
+    if(data.kind==="schedule"){
+      const quantity=batch2ScheduleQuantity(data,span);
+      $("maxAmp").textContent=String(quantity);$("maxStrain").textContent=data.first.toFixed(2);$("maxWind").textContent=data.spacing.toFixed(2);$("fails").textContent="N/A";
+      $("maxAmpLabel").textContent="Cantidad para el vano actual";$("maxStrainLabel").textContent="Primera posicion (m)";$("maxWindLabel").textContent="Separacion siguiente (m)";
+      $("resultHead").innerHTML="<tr><th>Rango de vano (m)</th><th>Cantidad total</th><th>Por extremo</th><th>Primera posicion</th><th>Separacion adicional</th></tr>";
+      $("results").innerHTML=rows.map(row=>`<tr><td>${row.minimum.toFixed(0)} &lt; L &le; ${row.f.toFixed(0)}</td><td>${row.strain}</td><td>${row.strain/2}</td><td>${data.first.toFixed(2)} m</td><td>${data.spacing.toFixed(2)} m</td></tr>`).join("");
+      setStatus(`Pauta ${data.source}: para L=${span.toFixed(1)} m corresponden ${quantity} ${data.model}. Coincide con la tabla del fabricante. No se inventa una curva EBP donde el documento solo publica cantidades y cotas.`,"ok");drawChart(rows);return;
+    }
+    if(data.kind==="subspan"){
+      const maximum=Math.max(...data.subspans),criterion=data.maxSubspan||60,total=data.subspans.reduce((sum,value)=>sum+value,0);
+      $("maxAmp").textContent=String(data.quantity);$("maxStrain").textContent=maximum.toFixed(1);$("maxWind").textContent=(total/data.subspans.length).toFixed(1);$("fails").textContent=maximum<=criterion?"0":"1";
+      $("maxAmpLabel").textContent="Separadores FJZ";$("maxStrainLabel").textContent="Subvano maximo (m)";$("maxWindLabel").textContent="Subvano promedio (m)";
+      $("resultHead").innerHTML="<tr><th>Subvano</th><th>Longitud (m)</th><th>Criterio maximo (m)</th><th>Verificacion</th></tr>";
+      $("results").innerHTML=rows.map(row=>`<tr><td>${row.subspan}</td><td>${row.strain.toFixed(1)}</td><td>${criterion.toFixed(1)}</td><td>${row.strain<=criterion?"Cumple":"Revisar"}</td></tr>`).join("");
+      setStatus(`Verificacion ${data.source}: ${data.quantity} separadores forman ${data.subspans.length} subvanos; secuencia exacta ${data.subspans.join(" + ")} = ${total.toFixed(0)} m y maximo ${maximum.toFixed(1)} m. Coincide con el grafico TECNOSOFT del PDF.`,maximum<=criterion?"ok":"bad");drawChart(rows);return;
+    }
+    const maxEnd=Math.max(...rows.map(row=>row.strain)),maxAccessory=Math.max(...rows.map(row=>row.damperStrain)),maxMotion=Math.max(...rows.map(row=>row.damperAmplitude)),failures=rows.filter(row=>row.strain>limit).length;
+    $("maxAmp").textContent=maxMotion.toFixed(3);$("maxStrain").textContent=maxEnd.toFixed(1);$("maxWind").textContent=maxAccessory.toFixed(1);$("fails").textContent=String(failures);
+    $("maxAmpLabel").textContent="Movimiento maximo accesorio (mm)";$("maxStrainLabel").textContent="Deformacion maxima (microstrain)";$("maxWindLabel").textContent="Deformacion maxima en accesorio";
+    $("resultHead").innerHTML="<tr><th>f (Hz)</th><th>V (m/s)</th><th>Re</th><th>deformacion extremo</th><th>deformacion accesorio</th><th>movimiento (mm)</th></tr>";
+    $("results").innerHTML=rows.map(row=>`<tr><td>${row.f.toFixed(1)}</td><td>${row.velocity.toFixed(2)}</td><td>${row.reynolds.toFixed(0)}</td><td>${row.strain.toFixed(1)}</td><td>${row.damperStrain.toFixed(1)}</td><td>${row.damperAmplitude.toFixed(3)}</td></tr>`).join("");
+    setStatus(`Verificacion ${data.source}: maximo ${maxEnd.toFixed(1)} microstrain en extremo, ${maxAccessory.toFixed(1)} en accesorio y ${maxMotion.toFixed(3)} mm. La forma, escala y pauta coinciden con la figura digitalizada; ${failures?`${failures} puntos exceden`:`ningun punto excede`} ${limit} microstrain.`,"ok");drawChart(rows);
   }
 
   function renderPlpSvdTestResults(rows) {
@@ -2618,9 +2734,10 @@
     const isCigre=Boolean(rows[0]?.cigre);
     const isTr792=Boolean(rows[0]?.tr792),isTr792Subspan=Boolean(rows[0]?.tr792Subspan);
     const isPlpSvdPower=Boolean(rows[0]?.plpSvdPower),isPlpSvdOptical=Boolean(rows[0]?.plpSvdOptical);
-    const isReference = isEA16 || isFlint || isBundle || isAlumoweld || isMonteaguila || isMonteaguila13 || isOpgw128 || isEA15Opgw || isGreeley || isDoc1058 || isCairo || isLchc || isLchc007 || isLab || isCharrua || isFarellon || isTr792 || isPlpSvdPower || isPlpSvdOptical;
+    const isBatch2=Boolean(rows[0]?.batch2),isBatchSchedule=Boolean(rows[0]?.batchSchedule),isBatchSubspan=Boolean(rows[0]?.batchSubspan);
+    const isReference = isEA16 || isFlint || isBundle || isAlumoweld || isMonteaguila || isMonteaguila13 || isOpgw128 || isEA15Opgw || isGreeley || isDoc1058 || isCairo || isLchc || isLchc007 || isLab || isCharrua || isFarellon || isTr792 || isPlpSvdPower || isPlpSvdOptical || isBatch2;
     const hasExternalDamper = rows.some((r) => r.damperStrain > 0 || r.damperAmplitude > 0);
-    const maxY = isPlpSvdPower?2:isPlpSvdOptical?.04:isTr792Subspan?80:isTr792?Math.ceil(Math.max(...rows.map((r)=>r.undampedStrain))/20)*20:isCigre ? Math.max(...rows.map((r) => r.amplitudeHighMm)) * 1.12 || 1 : isFarellon?500:isCharrua?(hasExternalDamper?500:Math.max(...rows.map(r=>r.strain))>500?1000:500):isLab?500:isLchc007?300:isLchc ? (Math.max(...rows.map(r=>r.undampedStrain))>700?1000:700) : isCairo ? (hasExternalDamper ? 500 : 1000) : isDoc1058 ? 400 : isAlumoweld || isEA15Opgw ? 500 : isGreeley ? (hasExternalDamper ? 500 : rows[0].greeleySupport === "tension" ? 1000 : 500) : isOpgw128 ? (hasExternalDamper ? 500 : 1000) : (isMonteaguila || isMonteaguila13) ? (hasExternalDamper ? 500 : isMonteaguila13 ? 1000 : 1500) : isBundle ? (rows[0].complete ? 250 : 1000) : isFlint ? (hasExternalDamper ? 500 : 1000) : isEA16 ? (hasExternalDamper ? 500 : 1500) : Math.max(...rows.map((r) => r.amplitudeMm)) * 1.12 || 1;
+    const maxY = isBatchSchedule?Math.max(...rows.map(r=>r.strain))*1.2:isBatchSubspan?Math.max(...rows.map(r=>r.strain))*1.15:isPlpSvdPower?2:isPlpSvdOptical?.04:isTr792Subspan?80:isTr792?Math.ceil(Math.max(...rows.map((r)=>r.undampedStrain))/20)*20:isCigre ? Math.max(...rows.map((r) => r.amplitudeHighMm)) * 1.12 || 1 : isFarellon?500:isCharrua?(hasExternalDamper?500:Math.max(...rows.map(r=>r.strain))>500?1000:500):isLab?500:isLchc007?300:isLchc ? (Math.max(...rows.map(r=>r.undampedStrain))>700?1000:700) : isCairo ? (hasExternalDamper ? 500 : 1000) : isDoc1058 ? 400 : isAlumoweld || isEA15Opgw ? 500 : isGreeley ? (hasExternalDamper ? 500 : rows[0].greeleySupport === "tension" ? 1000 : 500) : isOpgw128 ? (hasExternalDamper ? 500 : 1000) : (isMonteaguila || isMonteaguila13) ? (hasExternalDamper ? 500 : isMonteaguila13 ? 1000 : 1500) : isBundle ? (rows[0].complete ? 250 : 1000) : isFlint ? (hasExternalDamper ? 500 : 1000) : isEA16 ? (hasExternalDamper ? 500 : 1500) : isBatch2?Math.max(100,Math.ceil(Math.max(...rows.map(r=>Math.max(r.strain,r.damperStrain||0)))/100)*100):Math.max(...rows.map((r) => r.amplitudeMm)) * 1.12 || 1;
     const X = (f) => pad + (f - minF) / (maxF - minF || 1) * (width - pad - 14);
     const Y = (v) => height - pad - v / maxY * (height - pad - 22);
     ctx.clearRect(0, 0, width, height);
@@ -2638,7 +2755,11 @@
       if (i % 2 === 0) ctx.fillText(frequency.toFixed(0), x - 7, height - pad + 14);
     }
     const plot = (color, value) => { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); rows.forEach((r, i) => { if (i) ctx.lineTo(X(r.f), Y(value(r))); else ctx.moveTo(X(r.f), Y(value(r))); }); ctx.stroke(); };
-    if(isPlpSvdPower){
+    if(isBatchSchedule){
+      plot("#087f8c",row=>row.strain);$("chartLegend").innerHTML='<span style="color:#087f8c">Cantidad total de amortiguadores por rango de vano</span> - tabla del fabricante, no curva EBP';ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Cantidad total",pad,12);
+    } else if(isBatchSubspan){
+      const criterion=currentReference?.data?.maxSubspan||60;plot("#7c3aed",row=>row.strain);plot("#dc2626",()=>criterion);$("chartLegend").innerHTML=`<span style="color:#7c3aed">Longitud de cada subvano</span> - <span style="color:#dc2626">maximo del caso ${criterion} m</span>`;ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Longitud de subvano (m)",pad,12);
+    } else if(isPlpSvdPower){
       plot("#087f8c",(row)=>row.dissipatedPower);plot("#dc2626",(row)=>row.windPower);
       $("chartLegend").innerHTML='<span style="color:#087f8c">● Potencia disipada medida por el SVD 5050105</span> · <span style="color:#dc2626">● Potencia eólica calculada para 250 m</span> · curva digitalizada';
       ctx.fillStyle="#17324d";ctx.font="11px system-ui";ctx.fillText("Potencia (W)",pad,12);
@@ -2697,7 +2818,7 @@
       $("chartLegend").textContent = "Curva de amplitud pico a pico calculada por EBP.";
       ctx.fillStyle = "#17324d"; ctx.font = "11px system-ui"; ctx.fillText("Amplitud pp (mm)", pad, 12);
     }
-    const xAxisLabel=isPlpSvdOptical?"Ciclos acumulados (millones)":isTr792Subspan?"Velocidad de viento (m/s)":"Frecuencia (Hz)";
+    const xAxisLabel=isBatchSchedule?"Vano maximo del rango (m)":isBatchSubspan?"Numero de subvano":isPlpSvdOptical?"Ciclos acumulados (millones)":isTr792Subspan?"Velocidad de viento (m/s)":"Frecuencia (Hz)";
     ctx.fillText(xAxisLabel,width-(isPlpSvdOptical?180:isTr792Subspan?155:98),height-8);
   }
 
@@ -2707,7 +2828,7 @@
     const doc1058=Boolean(lastRows[0]?.doc1058), lchc=Boolean(lastRows[0]?.lchc),lchc007=Boolean(lastRows[0]?.lchc007);
     const tr792=Boolean(lastRows[0]?.tr792),tr792Subspan=Boolean(lastRows[0]?.tr792Subspan);
     const plpSvdPower=Boolean(lastRows[0]?.plpSvdPower),plpSvdOptical=Boolean(lastRows[0]?.plpSvdOptical);
-    const reference = Boolean(lastRows[0]?.ea16 || lastRows[0]?.flint || lastRows[0]?.cairo || lchc || lchc007 || lastRows[0]?.lab || lastRows[0]?.charrua || lastRows[0]?.farellon || lastRows[0]?.monteaguila || lastRows[0]?.monteaguila13 || lastRows[0]?.opgw128 || lastRows[0]?.ea15opgw || lastRows[0]?.greeley || doc1058 || tr792);
+    const reference = Boolean(lastRows[0]?.ea16 || lastRows[0]?.flint || lastRows[0]?.cairo || lchc || lchc007 || lastRows[0]?.lab || lastRows[0]?.charrua || lastRows[0]?.farellon || lastRows[0]?.monteaguila || lastRows[0]?.monteaguila13 || lastRows[0]?.opgw128 || lastRows[0]?.ea15opgw || lastRows[0]?.greeley || lastRows[0]?.batch2 || doc1058 || tr792);
     const bundle = Boolean(lastRows[0]?.bundle);
     const alumoweld = Boolean(lastRows[0]?.alumoweld);
     const header = plpSvdPower?"f_Hz,dissipated_power_W,wind_power_250m_W,power_ratio\n":plpSvdOptical?"cycles_million,optical_level_change_dBm\n":cigre?"f_Hz,V_m_s,Strouhal,Re,lambda_m,amplitude_pp_mm,amplitude_low_mm,amplitude_high_mm,antinode_strain_microstrain,control_strain_low_microstrain,control_strain_central_microstrain,control_strain_high_microstrain,wind_power_W,self_damping_power_W,damper_power_W,damper_motion_peak_mm,balance_error\n":tr792Subspan?"wind_m_s,horizontal_amplitude_mm,vertical_amplitude_mm,measured\n":tr792?"f_Hz,V_m_s,isolated_strain_microstrain,suspension_strain_microstrain,spacer_clamp_strain_microstrain,damper_clamp_strain_microstrain,damper_motion_mm\n":lchc007?"f_Hz,V_m_s,Re,undamped_strain_microstrain,damped_strain_microstrain,spacer_clamp_strain_microstrain,bundle_motion_mm\n":lchc ? "f_Hz,V_m_s,Re,undamped_strain_microstrain,damped_strain_microstrain,damper_clamp_strain_microstrain,sphere_clamp_strain_microstrain,damper_motion_mm\n" : doc1058 ? "f_Hz,V_m_s,Re,ags_strain_microstrain,vsd_clamp_strain_microstrain,vsd_power_W\n" : alumoweld ? "f_Hz,V_m_s,Re,end_strain_microstrain\n" : bundle ? "f_Hz,mode,V_m_s,end_strain_microstrain,spacer_clamp_strain_microstrain,damper_motion_mm\n" : reference ? "f_Hz,V_m_s,Re,end_strain_microstrain,damper_clamp_strain_microstrain,damper_motion_mm,antinode_motion_mm\n" : "f_Hz,V_m_s,Re,lambda_m,amplitude_pp_mm,strain_microstrain,wind_power_W\n";
@@ -2726,6 +2847,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     addFieldHelpers();
+    $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="Nuevos estudios ZTT / SAPREM - julio 2026"><option value="batch2-tar-acar700-bare">Tarapaca ACAR 700 duplex - sin FR-3</option><option value="batch2-tar-acar700-damped">Tarapaca ACAR 700 duplex - FJZ + FR-3</option><option value="batch2-ea24-acar1000-335">EA24 ACAR 1000 cuadruple - 335 m</option><option value="batch2-ea24-acar1000-406">EA24 ACAR 1000 cuadruple - 406 m</option><option value="batch2-ea24-opgw-bare">EA24 OPGW 13,6 - sin AMG</option><option value="batch2-ea24-opgw-350">EA24 OPGW 13,6 - 350 m</option><option value="batch2-ea24-opgw-406">EA24 OPGW 13,6 - 406 m</option><option value="batch2-ztt-opgw128-17">ZTT OPGW 12,1 / 4D-20 - tabla EDS 17%</option><option value="batch2-ztt-acar900-19">ZTT ACAR 900 / FR-3 - tabla EDS 19%</option><option value="batch2-ztt-acar900-24">ZTT ACAR 900 / FR-3 - tabla EDS 24%</option><option value="batch2-ztt-opgw118-bare">ZTT OPGW 11,80 - sin 4D-20</option><option value="batch2-ztt-opgw118-250">ZTT OPGW 11,80 - 250 m / 2 x 4D-20</option><option value="batch2-ztt-opgw118-500">ZTT OPGW 11,80 - 500 m / 4 x 4D-20</option><option value="batch2-ztt-opgw118-800">ZTT OPGW 11,80 - 800 m / 6 x 4D-20</option><option value="batch2-ztt-opgw118-1000">ZTT OPGW 11,80 - 1000 m / 8 x 4D-20</option><option value="batch2-ztt-greeley-bare">ZTT AAAC Greeley - sin FRY-3/5</option><option value="batch2-ztt-greeley-450">ZTT AAAC Greeley - 450 m / 2 x FRY-3/5</option><option value="batch2-ztt-greeley-900">ZTT AAAC Greeley - 900 m / 4 x FRY-3/5</option><option value="batch2-ztt-greeley-1200">ZTT AAAC Greeley - 1200 m / 6 x FRY-3/5</option><option value="batch2-ztt-fjz400">FJZ-245/28D - vano 400 m / 8 subvanos</option><option value="batch2-ea26-arbutus-bare">EA26 AAC ARBUTUS duplex - sin AMG</option><option value="batch2-ea26-arbutus-250">EA26 AAC ARBUTUS duplex - 250 m</option><option value="batch2-ea26-arbutus-423">EA26 AAC ARBUTUS duplex - 423 m</option><option value="batch2-ea26-opgw-bare">EA26 OPGW 14,05 - sin AMG051126</option><option value="batch2-ea26-opgw-423">EA26 OPGW 14,05 - 423 m</option><option value="batch2-tar-opgw-bare">Tarapaca OPGW 13,41 - sin 4D-20</option><option value="batch2-tar-opgw-250">Tarapaca OPGW 13,41 - 250 m / 2 x 4D-20</option></optgroup>');
     $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="PLP TR-739-E / TR-743-E · ensayos SVD"><option value="tr739-underdamped">TR-739-E · 1 SVD · 15 millones de ciclos</option><option value="tr739-adequate">TR-739-E · 3 SVD · 22 millones de ciclos</option><option value="tr743-power">TR-743-E · SVD 5050105 · potencia 16-106 Hz</option></optgroup>');
     $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="TR 792 · LT Entre Ríos-Charrúa · AAC JESSAMINE dúplex"><option value="tr792-265-bare">265 m · vibración eólica · sin Stockbridge</option><option value="tr792-265-damped">265 m · vibración eólica · con 9305.07/G/1</option><option value="tr792-431-bare">431 m · vibración eólica · sin Stockbridge</option><option value="tr792-431-damped">431 m · vibración eólica · con 9305.07/G/1</option><option value="tr792-265-subspan">265 m · oscilación de subvano</option><option value="tr792-431-subspan">431 m · oscilación de subvano</option></optgroup>');
     $("preset").insertAdjacentHTML("afterbegin", '<optgroup label="CL28-1268 / 025-20 - OPGW 12,2 / SD-0302-D27"><option value="farellon-opgw-bare">OPGW 12,2 · sin amortiguadores</option><option value="farellon-opgw-short">OPGW 12,2 · vano 250 m · 1 SD</option><option value="farellon-opgw-long">OPGW 12,2 · vano 377 m · 2 SD</option></optgroup>');

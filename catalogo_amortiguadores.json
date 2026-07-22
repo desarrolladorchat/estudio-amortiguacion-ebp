@@ -2296,5 +2296,35 @@
     "mass_kg": null,
     "dynamic_curve_available": false,
     "source": "PLP TR-739-E, 30-12-1996"
+  },
+  {
+    "family": "amortiguador_FRY",
+    "reference": "FRY-3/5",
+    "diameter_min_mm": 22.0,
+    "diameter_max_mm": 30.0,
+    "manufacturer": "ZTT",
+    "design_conductor": "AAAC Greeley 28,14 mm",
+    "position_tension_m": 1.56,
+    "position_suspension_m": 1.72,
+    "additional_spacing_m": 1.56,
+    "mass_kg": 4.6,
+    "dynamic_curve_available": false,
+    "image_scope": "Imagen representativa de la familia Stockbridge ZTT; geometria exacta en el PDF fuente",
+    "source": "Vibration Study for AAAC Greeley.pdf, Rev.01, 15-11-2023"
+  },
+  {
+    "family": "separador_amortiguador_FJZ",
+    "reference": "FJZ-245/28D",
+    "diameter_min_mm": 27.0,
+    "diameter_max_mm": 29.5,
+    "manufacturer": "ZTT",
+    "design_conductor": "AAAC Greeley 28,14 mm",
+    "bundle_spacing_mm": 450,
+    "mass_kg": null,
+    "maximum_average_subspan_m": 54.5,
+    "maximum_subspan_m": 60.0,
+    "dynamic_curve_available": false,
+    "image_scope": "Plano exacto de conjunto extraido del PDF fuente",
+    "source": "Spacer Damper FJZ-245-28D for AAAC Greeley (1).pdf, Rev.01, 15-11-2023"
   }
 ]
