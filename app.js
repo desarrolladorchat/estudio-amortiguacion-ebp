@@ -388,6 +388,7 @@
   let lastRows = [];
   let currentReference = null;
   let diagramZoom = 1;
+  let manualConfigurationChanged = false;
   let lchcEs007Allocation = {};
 
   function number(id) {
@@ -658,6 +659,7 @@
     const index = Number.parseInt($("catalog").value, 10);
     if (!Number.isInteger(index) || !catalog[index]) return;
     dampers.push({ catalog: catalog[index], position: Math.max(0, number("pos") || 0), coef: Math.max(0, number("dcoef") || 0) });
+    manualConfigurationChanged = true;
     renderDampers();
     setStatus(`${catalog[index].reference} añadido al estudio.`, "ok");
   }
@@ -668,6 +670,7 @@
 
   function loadPreset() {
     const key = $("preset").value;
+    manualConfigurationChanged = false;
     $("cigreSystemType").value = /^(tr792-|charrua-bundle-|lchc007-|ea26-|acar1000-|acar500-)/.test(key) ? "bundle" : "single";
     $("analysisMode").value = "reference";
     $("cigrePanel").hidden = true;
@@ -1451,6 +1454,7 @@
     if (!rec.valid) {
       $("recommendationText").innerHTML = `<strong>Sin recomendación automática.</strong><br>${rec.message}`;
       drawInstallationDiagram(null);
+      if(manualConfigurationChanged)drawActualInstallationDiagram();
       return;
     }
     const leftCount = rec.leftDistances.length, rightCount = rec.rightDistances.length;
@@ -1463,6 +1467,7 @@
     const accessoryName = rec.lchc007 || rec.charruaBundle ? (rec.total === 1 ? "separador-amortiguador" : "separadores-amortiguadores") : (rec.total === 1 ? "amortiguador" : "amortiguadores");
     $("recommendationText").innerHTML = `<strong>${rec.total} ${accessoryName} ${rec.model}</strong> (A: ${leftCount}; B: ${rightCount}).<br>${placement}${optionalText}${spacerText}${installationNote}${beaconText}<br><span class="hint">Rango aplicado: ${rec.range}. Posiciones globales desde A: ${rec.positions.length ? rec.positions.map((x) => x.toFixed(2)).join(", ") + " m" : "ninguna"}.</span>`;
     drawInstallationDiagram(rec);
+    if(manualConfigurationChanged)drawActualInstallationDiagram();
   }
 
   function drawInstallationDiagram(rec) {
@@ -1512,6 +1517,30 @@
     refreshDiagramZoom();
   }
 
+  function drawActualInstallationDiagram() {
+    const svg=$("installationDiagram"),span=Math.max(0,number("span")||0);
+    if(!svg||!(span>0))return;
+    const base=`<text x="380" y="22" text-anchor="middle" font-size="14" font-weight="700" fill="#17324d">Configuracion instalada actual - vano ${span.toFixed(2)} m</text><line x1="55" y1="75" x2="705" y2="75" stroke="#17324d" stroke-width="4"/><path d="M35 150 L55 75 L75 150 M685 150 L705 75 L725 150" fill="none" stroke="#607484" stroke-width="3"/><text x="55" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="#17324d">A</text><text x="705" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="#17324d">B</text>`;
+    if(!dampers.length){svg.innerHTML=base+'<text x="380" y="120" text-anchor="middle" font-size="14" fill="#607484">Sin accesorios instalados actualmente</text>';refreshDiagramZoom();return;}
+    const palette=["#087f8c","#7c3aed","#dc2626","#2563eb","#d97706","#16855b"],families=[...new Set(dampers.map(item=>item.catalog.family))],familyColor=new Map(families.map((family,index)=>[family,palette[index%palette.length]]));
+    const counts=new Map(),invalid=[],visualX=new Map(),endpointLimit=Math.max(5,span*.03);
+    const positioned=dampers.map((item,index)=>({item,index,position:Number(item.position),distanceA:Number(item.position),distanceB:span-Number(item.position)}));
+    const leftEnd=positioned.filter(entry=>entry.distanceA>=0&&entry.distanceA<=endpointLimit).sort((a,b)=>a.distanceA-b.distanceA),rightEnd=positioned.filter(entry=>entry.distanceB>=0&&entry.distanceB<=endpointLimit).sort((a,b)=>a.distanceB-b.distanceB);
+    const leftGap=Math.min(70,210/Math.max(1,leftEnd.length-1)),rightGap=Math.min(70,210/Math.max(1,rightEnd.length-1));
+    leftEnd.forEach((entry,index)=>visualX.set(entry.index,110+index*leftGap));rightEnd.forEach((entry,index)=>visualX.set(entry.index,650-index*rightGap));
+    const marks=dampers.map((item,index)=>{
+      const raw=Number(item.position),position=Number.isFinite(raw)?raw:0,outside=position<0||position>span,clamped=Math.min(span,Math.max(0,position)),key=clamped.toFixed(3),stack=counts.get(key)||0;counts.set(key,stack+1);
+      if(outside)invalid.push(`${item.catalog.reference}: ${position.toFixed(2)} m`);
+      const x=visualX.get(index)??(55+clamped/span*650),y=75-stack*13,color=outside?"#b91c1c":familyColor.get(item.catalog.family),separator=/separador|SPA/i.test(item.catalog.family),label=position<=span/2?`A: ${position.toFixed(2)} m`:`B: ${(span-position).toFixed(2)} m`,labelY=112+(index%2)*19;
+      const symbol=separator?`<rect x="${x-7}" y="${y-7}" width="14" height="14" transform="rotate(45 ${x} ${y})" fill="${color}" stroke="#17324d"/>`:`<circle cx="${x}" cy="${y}" r="8" fill="${color}" stroke="#17324d"/>`;
+      return `<g><line x1="${x}" y1="${y-16}" x2="${x}" y2="${y+16}" stroke="${color}" stroke-width="3"/>${symbol}<text x="${x}" y="${labelY}" text-anchor="middle" font-size="10" fill="#17324d">${label}</text><title>${item.catalog.reference} - posicion global ${position.toFixed(3)} m desde A</title></g>`;
+    }).join("");
+    const legend=families.map((family,index)=>{const models=[...new Set(dampers.filter(item=>item.catalog.family===family).map(item=>item.catalog.reference))].join("/");return `<tspan fill="${familyColor.get(family)}">${index?"   ":""}● ${models}</tspan>`;}).join("");
+    const footer=invalid.length?`<text x="380" y="218" text-anchor="middle" font-size="11" font-weight="700" fill="#b91c1c">Fuera del vano: ${invalid.join("; ")}</text>`:`<text x="380" y="218" text-anchor="middle" font-size="10" fill="#607484">Las zonas de extremo se amplian para legibilidad; las cotas numericas gobiernan la instalacion.</text>`;
+    svg.innerHTML=base+marks+`<text x="380" y="176" text-anchor="middle" font-size="13" font-weight="700" fill="#087f8c">${dampers.length} accesorio(s) cargado(s) - cotas medidas desde el extremo indicado</text><text x="380" y="198" text-anchor="middle" font-size="11">${legend}</text>${footer}`;
+    svg.setAttribute("aria-label",`Configuracion actual con ${dampers.length} accesorios en un vano de ${span.toFixed(2)} metros`);refreshDiagramZoom();
+  }
+
   function refreshDiagramZoom() {
     const dialog = $("diagramDialog");
     if (!dialog?.open) return;
@@ -1554,6 +1583,7 @@
       if (!spacer) { setStatus(`El modelo ${rec.spacerModel} no está disponible en el catálogo.`, "bad"); return; }
       rec.spacerPositions.forEach((position) => dampers.push({ catalog: spacer, position, coef: 0 }));
     }
+    manualConfigurationChanged = false;
     $("family").value = rec.family;
     filterCatalog();
     const recommendedIndex = catalog.findIndex((item) => item.reference === rec.model);
@@ -1592,15 +1622,17 @@
     const beaconGroup = beaconCards ? `<details style="margin:8px 0;border:1px solid #bdd6df;border-radius:8px;background:#f7fbfc"><summary style="cursor:pointer;padding:10px;font-weight:700;color:#087f8c">19 amortiguadores junto a balizas · mostrar posiciones editables</summary><div style="padding:0 8px 8px">${beaconCards}</div></details>` : "";
     $("dampers").innerHTML = regular + allocationGroup + beaconGroup;
     document.querySelectorAll("[data-i]").forEach((input) => {
-      input.addEventListener("input", () => { dampers[Number(input.dataset.i)][input.dataset.k] = Math.max(0, Number.parseFloat(input.value) || 0); });
+      input.addEventListener("input", () => { dampers[Number(input.dataset.i)][input.dataset.k] = Math.max(0, Number.parseFloat(input.value) || 0); manualConfigurationChanged = true; drawActualInstallationDiagram(); });
     });
     document.querySelectorAll("[data-remove]").forEach((button) => {
-      button.addEventListener("click", () => { dampers.splice(Number(button.dataset.remove), 1); renderDampers(); });
+      button.addEventListener("click", () => { dampers.splice(Number(button.dataset.remove), 1); manualConfigurationChanged = true; renderDampers(); });
     });
+    if(manualConfigurationChanged)drawActualInstallationDiagram();
   }
 
   function clearStudy() {
     dampers = [];
+    manualConfigurationChanged = false;
     currentReference = null;
     lastRows = [];
     renderDampers();
@@ -2895,6 +2927,7 @@
     $("supportType").addEventListener("change", updateRecommendation);
     $("supportTypeB").addEventListener("change", updateRecommendation);
     $("openDiagramZoom").addEventListener("click", openDiagramZoom);
+    $("openActualDiagram").addEventListener("click", () => { manualConfigurationChanged = true; drawActualInstallationDiagram(); openDiagramZoom(); });
     $("installationDiagram").addEventListener("dblclick", openDiagramZoom);
     $("zoomIn").addEventListener("click", () => changeDiagramZoom(0.25));
     $("zoomOut").addEventListener("click", () => changeDiagramZoom(-0.25));

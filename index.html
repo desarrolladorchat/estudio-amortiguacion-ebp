@@ -55,7 +55,7 @@
   <div class="catalog-picker"><select id="catalog" class="hidden-select" aria-label="Modelo compatible"></select><button type="button" id="catalogToggle" class="catalog-toggle" aria-expanded="false"><img id="catalogToggleImage" alt=""><span id="catalogToggleText">Cargando catálogo...</span>⌄</button><div id="catalogMenu" class="catalog-menu" hidden></div></div>
   <div class="catalog-preview"><img id="catalogImage" alt="Imagen del accesorio seleccionado"><div id="catalogInfo">Cargando catálogo...</div></div>
   <div class="row"><div><label>Posición desde extremo (m)</label><input id="pos" type="number" value="1.02" step="0.01"></div><div><label>Coef. equivalente (W/(Hz·m²))</label><input id="dcoef" type="number" value="0" step="any"></div></div>
-  <div class="actions"><button type="button" id="add">Añadir accesorio</button><button type="button" class="secondary" id="clear">Limpiar estudio</button></div>
+  <div class="actions"><button type="button" id="add">Añadir accesorio</button><button type="button" class="secondary" id="openActualDiagram">Ver disposición actual</button><button type="button" class="secondary" id="clear">Limpiar estudio</button></div>
   <div id="dampers"></div>
   <p class="hint">El coeficiente equivalente del amortiguador debe calibrarse con una curva de potencia o impedancia del fabricante. Con valor 0 se calcula el caso sin disipación externa.</p>
   <div class="actions"><button type="button" id="calc">Calcular estudio</button><button type="button" class="secondary" id="download">Descargar CSV</button></div>
@@ -67,5 +67,5 @@
 </section></div></main>
   <dialog id="diagramDialog" class="zoom-dialog"><div class="zoom-toolbar"><button type="button" id="zoomOut" class="secondary">−</button><button type="button" id="zoomReset" class="secondary">100%</button><button type="button" id="zoomIn">+</button><span id="zoomLevel">100%</span><button type="button" id="closeDiagram" class="danger">Cerrar</button></div><div id="zoomStage" class="zoom-stage"></div></dialog>
   <p class="hint" style="max-width:1250px;margin:0 auto 20px;padding:0 16px">Metodología, datos obligatorios y límites: <a href="MODELO_CIGRE.md" target="_blank" rel="noopener">documentación del motor CIGRE</a>. Auditoría de reproducciones: <a href="auditoria-ejemplos.html">casos PDF verificados</a>.</p>
-  <script src="app.js?v=20260722-51"></script>
+  <script src="app.js?v=20260722-52"></script>
 </body></html>
