@@ -1,0 +1,6 @@
+Options -Indexes
+
+<FilesMatch "\.(py|pyc|md|bat)$">
+  Require all denied
+</FilesMatch>
+
