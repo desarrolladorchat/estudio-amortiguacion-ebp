@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Manual técnico de vibración eólica, balance de energía EBP y selección de amortiguadores para líneas eléctricas.">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/transmissionline-favicon-100.png">
+  <link rel="apple-touch-icon" href="assets/transmissionline-favicon-280.png">
+  <link rel="stylesheet" href="manual-tecnico.css?v=20260723-1">
+  <title>Manual técnico de amortiguación | Transmission Line</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        processEscapes: true
+      },
+      options: { skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code"] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+  <script defer src="manual-tecnico.js?v=20260723-1"></script>
+</head>
+<body>
+  <header class="manual-header">
+    <div class="manual-header-inner">
+      <div>
+        <p class="eyebrow">Biblioteca técnica</p>
+        <h1>Manual técnico de estudios de amortiguación</h1>
+        <p>Vibración eólica, EBP, CIGRE, IEC 61897 y selección de accesorios.</p>
+      </div>
+      <a class="brand-link" href="https://transmissionline.cl/" target="_blank" rel="noopener" aria-label="Visitar Transmission Line">
+        <img src="assets/transmissionline-logo.png" alt="Transmission Line">
+      </a>
+    </div>
+  </header>
+
+  <nav class="manual-toolbar" aria-label="Herramientas del manual">
+    <div class="manual-toolbar-inner">
+      <a class="tool-button primary" href="index.html">← Volver al simulador</a>
+      <button class="tool-button mobile-only" id="toggleToc" type="button" aria-expanded="false">Índice</button>
+      <label class="search-box">
+        <span class="sr-only">Buscar en el manual</span>
+        <input id="manualSearch" type="search" placeholder="Buscar parámetro, fórmula o norma..." autocomplete="off">
+        <kbd>Enter</kbd>
+      </label>
+      <span id="searchStatus" class="search-status" aria-live="polite"></span>
+      <a class="tool-button" href="MANUAL_TECNICO_ESTUDIOS_AMORTIGUACION.md" download>Descargar Markdown</a>
+      <button class="tool-button" id="printManual" type="button">Imprimir / PDF</button>
+    </div>
+  </nav>
+
+  <main class="manual-layout">
+    <aside class="manual-sidebar" id="manualSidebar">
+      <div class="sidebar-heading">
+        <strong>Contenido</strong>
+        <button id="closeToc" type="button" class="close-toc" aria-label="Cerrar índice">×</button>
+      </div>
+      <nav id="manualToc" aria-label="Índice del manual">
+        <p class="loading-small">Preparando índice...</p>
+      </nav>
+    </aside>
+
+    <article class="manual-document" id="manualDocument" aria-live="polite">
+      <div class="loading-card">
+        <div class="spinner" aria-hidden="true"></div>
+        <strong>Cargando manual técnico...</strong>
+        <span>Se está leyendo el documento Markdown.</span>
+      </div>
+    </article>
+  </main>
+
+  <button id="backToTop" class="back-to-top" type="button" aria-label="Volver arriba">↑</button>
+
+  <noscript>
+    <p class="noscript">Este visor necesita JavaScript. Puede abrir directamente
+      <a href="MANUAL_TECNICO_ESTUDIOS_AMORTIGUACION.md">el archivo Markdown</a>.
+    </p>
+  </noscript>
+</body>
+</html>
