@@ -1,7 +1,25 @@
 (() => {
   "use strict";
 
-  const SOURCE = "MANUAL_TECNICO_ESTUDIOS_AMORTIGUACION.md";
+  const DOCUMENTS = {
+    manual: {
+      source: "MANUAL_TECNICO_ESTUDIOS_AMORTIGUACION.md",
+      title: "Manual técnico de estudios de amortiguación",
+      subtitle: "Vibración eólica, EBP, CIGRE, IEC 61897 y selección de accesorios.",
+      alternateHref: "manual-tecnico.html?documento=modelo-cigre",
+      alternateText: "Ver modelo CIGRE"
+    },
+    "modelo-cigre": {
+      source: "MODELO_CIGRE.md",
+      title: "Documentación del modelo EBP CIGRE",
+      subtitle: "Hipótesis, datos obligatorios, ecuaciones y límites del motor de cálculo.",
+      alternateHref: "manual-tecnico.html",
+      alternateText: "Ver manual técnico"
+    }
+  };
+  const requestedDocument = new URLSearchParams(location.search).get("documento") || "manual";
+  const activeDocument = DOCUMENTS[requestedDocument] || DOCUMENTS.manual;
+  const SOURCE = activeDocument.source;
   const documentNode = document.getElementById("manualDocument");
   const tocNode = document.getElementById("manualToc");
   const searchInput = document.getElementById("manualSearch");
@@ -10,8 +28,17 @@
   const toggleToc = document.getElementById("toggleToc");
   const closeToc = document.getElementById("closeToc");
   const backToTop = document.getElementById("backToTop");
+  const downloadMarkdown = document.getElementById("downloadMarkdown");
+  const alternateDocument = document.getElementById("alternateDocument");
   let matches = [];
   let currentMatch = -1;
+
+  document.getElementById("viewerTitle").textContent = activeDocument.title;
+  document.getElementById("viewerSubtitle").textContent = activeDocument.subtitle;
+  document.title = `${activeDocument.title} | Transmission Line`;
+  downloadMarkdown.href = SOURCE;
+  alternateDocument.href = activeDocument.alternateHref;
+  alternateDocument.textContent = activeDocument.alternateText;
 
   function slugify(value) {
     return value

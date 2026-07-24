@@ -48,6 +48,16 @@ button, input { font: inherit; }
   letter-spacing: .11em;
   text-transform: uppercase;
 }
+.viewer-version {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: #ffffff1c;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .03em;
+}
 .brand-link {
   flex: 0 0 auto;
   display: flex;
