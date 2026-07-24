@@ -113,7 +113,8 @@
       item.className = `level-${heading.tagName.slice(1)}`;
       const link = document.createElement("a");
       link.href = `#${heading.id}`;
-      link.textContent = heading.childNodes[0]?.textContent?.trim() || heading.textContent.replace(/#$/, "").trim();
+      const headingText = heading.childNodes[0]?.textContent?.trim() || heading.textContent.replace(/#$/, "").trim();
+      link.textContent = headingText.replace(/\$/g, "");
       link.addEventListener("click", () => closeSidebar());
       item.append(link);
       list.append(item);
@@ -214,7 +215,7 @@
   async function typesetMath() {
     if (!window.MathJax?.typesetPromise) return;
     try {
-      await window.MathJax.typesetPromise([documentNode]);
+      await window.MathJax.typesetPromise([documentNode, tocNode]);
     } catch (error) {
       console.warn("MathJax no pudo procesar algunas fórmulas.", error);
     }

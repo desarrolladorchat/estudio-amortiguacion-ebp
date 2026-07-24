@@ -1,9 +1,10 @@
 {
-  "version": "2026.07.23.2",
+  "version": "2026.07.23.4",
   "features": [
     "visor-manual-tecnico",
     "visor-modelo-cigre",
     "busqueda-documental",
-    "indice-automatico"
+    "indice-automatico",
+    "variables-matematicas-en-linea"
   ]
 }
