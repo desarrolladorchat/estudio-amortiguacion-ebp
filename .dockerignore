@@ -5,9 +5,10 @@ __pycache__
 *.py
 *.pyc
 *.md
+!MODELO_CIGRE.md
+!MANUAL_TECNICO_ESTUDIOS_AMORTIGUACION.md
 *.csv
 *.bat
 ebp_vibration_studio
 example_*
 results.csv
-
