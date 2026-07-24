@@ -1,0 +1,9 @@
+{
+  "version": "2026.07.23.2",
+  "features": [
+    "visor-manual-tecnico",
+    "visor-modelo-cigre",
+    "busqueda-documental",
+    "indice-automatico"
+  ]
+}
